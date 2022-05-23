@@ -46,7 +46,7 @@ class CalibrainTask:
             log('Importing RR data.')
             self.import_heart()
         if bounds:
-            log('Importing event data.')
+            log('Importing bounds data.')
             self.import_bounds()
         if subjective:
             log('Importing subjective data.')
@@ -69,6 +69,19 @@ class CalibrainTask:
         self.subjective['nasa_score'] = self.subjective[
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
+
+    def fix_timestamps_heart(self):
+        # Check for NaN values (should be 0)
+        nans = sum(self.heart['rri'].isnull())
+        # Raise error when there are NaN values
+        assert nans == 0, "There are {nans} NaN values in the heart data, experted 0."
+        # Fix timestamps based on RR data
+        self.heart['cumsum_rri'] = self.heart['rri'].cumsum(axis=0)
+        self.heart['cumsum_rri_td'] = pd.to_timedelta(
+            self.heart['cumsum_rri'], 'ms')
+        self.heart['time_new'] = self.heart['time'][0] + self.heart['cumsum_rri_td']
+        # Delete columns used for calculation
+        self.heart.drop(['cumsum_rri', 'cumsum_rri_td'], axis=1, inplace=True)
 
 
 class CalibrainCLT(CalibrainTask):
@@ -147,16 +160,17 @@ class CalibrainData:
             dir=self.dir / 'CLT',
             heart=True,
             eye=True,
-            events=True,
+            bounds=True,
             subjective=True,
         )
+        self.clt.fix_timestamps_heart()
 
         # MRT
         self.mrt = CalibrainMRT(
             dir=self.dir / 'MRT',
             heart=True,
             eye=True,
-            events=True,
+            bounds=True,
             subjective=True,
         )
 
@@ -176,4 +190,4 @@ if __name__ == '__main__':
     path_to_data = 'data/7_202205091017'
     data = CalibrainData(dir=path_to_data)
 
-    events = data.clt.bounds
+    #bounds = data.clt.bounds
