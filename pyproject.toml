@@ -8,6 +8,8 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.10"
 pandas = "^1.4.2"
+colorama = "^0.4.4"
+pyfiglet = "^0.8.post1"
 
 [tool.poetry.dev-dependencies]
 
