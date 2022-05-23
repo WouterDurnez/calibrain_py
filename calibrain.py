@@ -40,6 +40,7 @@ class CalibrainTask:
         bounds: bool = True,
         subjective: bool = True,
         eye: bool = True,
+        time_fixer: bool = True,
     ):
 
         if heart:
@@ -54,6 +55,8 @@ class CalibrainTask:
         if eye:
             log('Importing eye tracking data.')
             self.import_eye()
+        if time_fixer:
+            self.fix_timestamps_heart()
 
     def import_heart(self):
         self.heart = import_dataframe(path=self.dir / 'raw-heart.csv')
@@ -163,7 +166,6 @@ class CalibrainData:
             bounds=True,
             subjective=True,
         )
-        self.clt.fix_timestamps_heart()
 
         # MRT
         self.mrt = CalibrainMRT(
