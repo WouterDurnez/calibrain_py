@@ -95,12 +95,14 @@ class CalibrainData():
         self.clt.import_heart()
         self.clt.import_bounds()
         self.clt.import_subjective()
+        self.clt.import_performance()
 
         # MRT
         self.mrt = CalibrainMRT(dir=self.dir / 'MRT')
         self.mrt.import_heart()
         self.mrt.import_bounds()
         self.mrt.import_subjective()
+        self.mrt.import_performance()
 
 
 
