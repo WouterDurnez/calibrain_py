@@ -42,11 +42,21 @@ class CalibrainCLT(CalibrainTask):
 
         super().__init__(dir=dir)
 
+    # Import performance data
+    def import_performance(self):
+        self.performance_clt = pd.read_csv(self.dir / 'performance-clt.csv')
+
+
 class CalibrainMRT(CalibrainTask):
 
     def __init__(self, dir: str|Path):
 
         super().__init__(dir=dir)
+
+    # Import performance data
+    def import_performance(self):
+        self.performance_mrt = pd.read_csv(self.dir / 'performance-mrt.csv')
+
 
 class CalibrainData():
     def __init__(
@@ -84,11 +94,13 @@ class CalibrainData():
         self.clt = CalibrainCLT(dir=self.dir / 'CLT')
         self.clt.import_heart()
         self.clt.import_bounds()
+        self.clt.import_subjective()
 
         # MRT
         self.mrt = CalibrainMRT(dir=self.dir / 'MRT')
         self.mrt.import_heart()
         self.mrt.import_bounds()
+        self.mrt.import_subjective()
 
 
 
