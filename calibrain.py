@@ -53,6 +53,9 @@ class CalibrainData():
         self.dir = Path(dir)
         self._check_valid_dir()
 
+        # Check and set participant number
+        self.pp_number = int(self.dir.stem.split('_')[0])
+
         # Import data
         self.import_data()
 
@@ -74,10 +77,12 @@ class CalibrainData():
         # CLT
         self.clt = CalibrainCLT(dir=self.dir / 'CLT')
         self.clt.import_heart()
+        self.clt.import_bounds()
 
         # MRT
         self.mrt = CalibrainCLT(dir=self.dir / 'MRT')
         self.mrt.import_heart()
+        self.mrt.import_bounds()
 
 
 
