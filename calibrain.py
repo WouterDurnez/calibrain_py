@@ -30,6 +30,12 @@ class CalibrainTask():
         self.heart['timestamp_datetime'] = pd.to_datetime(self.heart['Timestamp'], unit='ms',
                                                           origin='unix')
 
+    def import_subjective(self):
+        self.subjective = pd.read_csv(self.dir / 'questionnaire.csv')
+        self.subjective['nasa_score'] = self.subjective[
+            ['PD', 'MD', 'TD', 'PE', 'EF', 'FL']
+        ].mean(axis=1)
+
 class CalibrainCLT(CalibrainTask):
 
     def __init__(self, dir: str|Path):
