@@ -28,6 +28,12 @@ class CalibrainCLT(CalibrainTask):
 
         super().__init__(dir=dir)
 
+class CalibrainMRT(CalibrainTask):
+
+    def __init__(self, dir: str|Path):
+
+        super().__init__(dir=dir)
+
 class CalibrainData():
     def __init__(
         self,
