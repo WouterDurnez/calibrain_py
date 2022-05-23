@@ -36,6 +36,23 @@ class CalibrainTask():
             ['PD', 'MD', 'TD', 'PE', 'EF', 'FL']
         ].mean(axis=1)
 
+    # Fix the incorrect timestamps in the heart data
+    def fix_timestamps_rr(self):
+        # check if there are any NaN values in the dataframe
+        nans = sum(self.heart['RRI'].isnull())
+        # raise error if nan != 0
+        assert nans == 0, f"There are {nans} NaN values in the RRI data, expected zero"
+        # fix timestamps based on rr data
+        self.heart['cumsum_RRI'] = self.heart['RRI'].cumsum(axis=0)
+        self.heart['cumsum_RRI_td'] = pd.to_timedelta(
+            self.heart['cumsum_RRI'], 'ms')
+        self.heart['timestamp_datetime_new'] = self.heart['timestamp_datetime'][
+                                                                      0] + \
+                                                                  self.heart['cumsum_RRI_td']
+        # Delete columns used for calculation
+        self.heart.drop('cumsum_RRI', axis=1, inplace=True)
+        self.heart.drop('cumsum_RRI_td', axis=1, inplace=True)
+
 class CalibrainCLT(CalibrainTask):
 
     def __init__(self, dir: str|Path):
@@ -96,6 +113,7 @@ class CalibrainData():
         self.clt.import_bounds()
         self.clt.import_subjective()
         self.clt.import_performance()
+        self.clt.fix_timestamps_rr()
 
         # MRT
         self.mrt = CalibrainMRT(dir=self.dir / 'MRT')
