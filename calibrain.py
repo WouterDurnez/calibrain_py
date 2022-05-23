@@ -80,7 +80,7 @@ class CalibrainData():
         self.clt.import_bounds()
 
         # MRT
-        self.mrt = CalibrainCLT(dir=self.dir / 'MRT')
+        self.mrt = CalibrainMRT(dir=self.dir / 'MRT')
         self.mrt.import_heart()
         self.mrt.import_bounds()
 
