@@ -20,7 +20,15 @@ class CalibrainTask():
 
     def import_heart(self):
         self.heart = pd.read_csv(self.dir / 'raw-heart.csv')
+        # Create column with formatted timestamps
+        self.heart['timestamp_datetime'] = pd.to_datetime(self.heart['Timestamp'], unit='ms',
+                                                                origin='unix')
 
+    def import_bounds(self):
+        self.bounds = pd.read_csv(self.dir / 'events.csv')
+        # Create column with formatted timestamps
+        self.heart['timestamp_datetime'] = pd.to_datetime(self.heart['Timestamp'], unit='ms',
+                                                          origin='unix')
 
 class CalibrainCLT(CalibrainTask):
 
