@@ -61,6 +61,10 @@ class CalibrainData():
         self.clt = CalibrainCLT(dir=self.dir / 'CLT')
         self.clt.import_heart()
 
+        # MRT
+        self.mrt = CalibrainCLT(dir=self.dir / 'MRT')
+        self.mrt.import_heart()
+
 
 
 
