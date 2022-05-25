@@ -26,15 +26,13 @@ class CalibrainTask:
 
     def __init__(self, dir: str | Path, **import_args):
 
-        super().__init__()
-
         # Set directory
         self.dir = Path(dir) if not isinstance(dir, Path) else dir
 
         # Load data
-        self.import_data(**import_args)
+        self._import_data(**import_args)
 
-    def import_data(
+    def _import_data(
         self,
         heart: bool = True,
         bounds: bool = True,
@@ -44,27 +42,27 @@ class CalibrainTask:
 
         if heart:
             log('Importing RR data.')
-            self.import_heart()
+            self._import_heart()
         if bounds:
             log('Importing event data.')
-            self.import_bounds()
+            self._import_bounds()
         if subjective:
             log('Importing subjective data.')
-            self.import_subjective()
+            self._import_subjective()
         if eye:
             log('Importing eye tracking data.')
-            self.import_eye()
+            self._import_eye()
 
-    def import_heart(self):
+    def _import_heart(self):
         self.heart = import_dataframe(path=self.dir / 'raw-heart.csv')
 
-    def import_eye(self):
+    def _import_eye(self):
         self.eye = import_dataframe(path=self.dir / 'eye.csv')
 
-    def import_bounds(self):
+    def _import_bounds(self):
         self.bounds = import_dataframe(path=self.dir / 'events.csv')
 
-    def import_subjective(self):
+    def _import_subjective(self):
         self.subjective = import_dataframe(path=self.dir / 'questionnaire.csv')
         self.subjective['nasa_score'] = self.subjective[
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
@@ -79,14 +77,31 @@ class CalibrainCLT(CalibrainTask):
     def __init__(self, dir: str | Path, **import_args):
         log('Initializing CLT.', color='red')
         super().__init__(dir=dir)
-        self.import_performance()
+        self._import_performance()
 
     # Import performance data
-    def import_performance(self):
+    def _import_performance(self):
         log('Importing performance data.')
         self.performance = import_dataframe(
             path=self.dir / 'performance-clt.csv'
         )
+
+    def _get_epochs(self):
+        self.bounds['end'] = self.bounds.time.shift(-1)
+        self.bounds = self.bounds.loc[
+            self.bounds.event.isin(
+                [
+                    'Marker: measuring baseline',
+                    'Condition: 0',
+                    'Condition: 1',
+                    'Condition: 2',
+                    'Condition: 3',
+                ]
+            )
+        ]
+        self.bounds.event = ['baseline','practice','1back','2back','3back']
+        self.bounds.rename(columns={'time':'start'}, inplace=True)
+        self.bounds = self.bounds[['event','start','end']]
 
 
 class CalibrainMRT(CalibrainTask):
@@ -97,10 +112,10 @@ class CalibrainMRT(CalibrainTask):
     def __init__(self, dir: str | Path, **import_args):
         log('Initializing MRT.', color='red')
         super().__init__(dir=dir, **import_args)
-        self.import_performance()
+        self._import_performance()
 
     # Import performance data
-    def import_performance(self):
+    def _import_performance(self):
         log('Importing performance data.')
         self.performance = import_dataframe(
             path=self.dir / 'performance-mrt.csv'
@@ -119,7 +134,7 @@ class CalibrainData:
         self._check_valid_dir()
 
         # Import data
-        self.import_data()
+        self._import_data()
         self.pp = self.demo.id
 
     def _check_valid_dir(self):
@@ -133,7 +148,7 @@ class CalibrainData:
             'demographics.csv' in files_and_folders
         ), 'Expected demographics file in directory!'
 
-    def import_data(self):
+    def _import_data(self):
 
         # Demographics
         self.demo = (
@@ -147,7 +162,7 @@ class CalibrainData:
             dir=self.dir / 'CLT',
             heart=True,
             eye=True,
-            events=True,
+            bounds=True,
             subjective=True,
         )
 
@@ -156,7 +171,7 @@ class CalibrainData:
             dir=self.dir / 'MRT',
             heart=True,
             eye=True,
-            events=True,
+            bounds=True,
             subjective=True,
         )
 
@@ -177,3 +192,4 @@ if __name__ == '__main__':
     data = CalibrainData(dir=path_to_data)
 
     events = data.clt.bounds
+    events['shift'] = events.time.shift(-1)
