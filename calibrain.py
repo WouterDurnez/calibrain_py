@@ -157,6 +157,15 @@ class CalibrainMRT(CalibrainTask):
             path=self.dir / 'performance-mrt.csv'
         )
 
+    def add_trial_info_performance(self):
+        self.performance['trial'] = self.performance.groupby(['condition']).cumcount() + 1
+
+    # def add_trial_info_eye(self):
+    #     '''
+    #     Note: only to be executed AFTER add_trial_info_performance
+    #     '''
+    #
+
 
 class CalibrainData:
     def __init__(
