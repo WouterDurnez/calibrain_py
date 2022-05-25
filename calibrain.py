@@ -86,6 +86,25 @@ class CalibrainTask:
         # Delete columns used for calculation
         self.heart.drop(['cumsum_rri', 'cumsum_rri_td'], axis=1, inplace=True)
 
+    def convert_bounds_df(self):
+        # create dict where data will be stored
+        bounds_dict = {'condition': [], 'start_time': [], 'end_time':[]}
+        # specify start and end times of baseline
+        baseline_start = self.bounds[self.bounds['event'] == 'Marker: measuring baseline']['time'].iloc[0]
+        baseline_end = self.bounds[self.bounds['event'] == 'Marker: finished measuring baseline']['time'].iloc[0]
+        # add to dict
+        bounds_dict['condition'].append('baseline')
+        bounds_dict['start_time'].append(baseline_start)
+        bounds_dict['end_time'].append(baseline_end)
+        # specify start and end times of conditions and add to dict
+        for condition in ['1', '2', '3']:
+            start = self.bounds[self.bounds['event'] == f'Condition: {condition}']['time'].iloc[0]
+            end = self.bounds[self.bounds['event'] == f'Condition: Q{condition}']['time'].iloc[0]
+            bounds_dict['condition'].append(condition)
+            bounds_dict['start_time'].append(start)
+            bounds_dict['end_time'].append(end)
+        # dict to pd.df and overwrite bounds df
+        self.bounds = pd.DataFrame.from_dict(bounds_dict)
 
 class CalibrainCLT(CalibrainTask):
     """
@@ -166,6 +185,7 @@ class CalibrainData:
             bounds=True,
             subjective=True,
         )
+        self.clt.convert_bounds_df()
 
         # MRT
         self.mrt = CalibrainMRT(
@@ -175,6 +195,7 @@ class CalibrainData:
             bounds=True,
             subjective=True,
         )
+        self.mrt.convert_bounds_df()
 
     def __repr__(self):
 
