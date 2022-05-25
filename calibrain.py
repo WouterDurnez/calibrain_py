@@ -10,8 +10,12 @@
 
 from pathlib import Path
 import pandas as pd
+import numpy as np
+from tqdm import tqdm
 import os
 from utils.helper import log, clean_col_name, hi, import_dataframe
+
+tqdm.pandas()
 
 
 ################
@@ -38,11 +42,14 @@ class CalibrainTask:
         bounds: bool = True,
         subjective: bool = True,
         eye: bool = True,
+        time_fixer: bool = True,
     ):
 
         if heart:
             log('Importing RR data.')
             self._import_heart()
+            if time_fixer:
+              self._fix_timestamps_heart()
         if bounds:
             log('Importing event data.')
             self._import_bounds()
@@ -52,6 +59,7 @@ class CalibrainTask:
         if eye:
             log('Importing eye tracking data.')
             self._import_eye()
+
 
     def _import_heart(self):
         self.heart = import_dataframe(path=self.dir / 'raw-heart.csv')
@@ -98,6 +106,37 @@ class CalibrainTask:
         self.bounds = self.bounds[['event', 'start', 'end']]
 
 
+    def _fix_timestamps_heart(self):
+      
+        # Check for NaN values (should be 0)
+        nans = sum(self.heart['rri'].isnull())
+        
+        # Raise error when there are NaN values
+        assert nans == 0, "There are {nans} NaN values in the heart data, experted 0."
+        
+        # Fix timestamps based on RR data
+        self.heart['cumsum_rri'] = self.heart['rri'].cumsum(axis=0)
+        self.heart['cumsum_rri_td'] = pd.to_timedelta(
+            self.heart['cumsum_rri'], 'ms')
+        self.heart['time_new'] = self.heart['time'][0] + self.heart['cumsum_rri_td']
+        
+        # Delete columns used for calculation
+        self.heart.drop(['cumsum_rri', 'cumsum_rri_td'], axis=1, inplace=True)
+
+
+    def _add_condition_labels(self):
+        def add_cond(row, bounds: pd.DataFrame) -> str:
+            records = bounds[(bounds["start_time"] <= row["time"]) & \
+                             (bounds["end_time"] > row["time"])]
+            if records.shape[0] < 1:
+                return np.nan
+            return records.iloc[0]["condition"]
+        log("Labeling heart data.")
+        self.heart['condition'] = self.heart.progress_apply(add_cond, bounds=self.bounds, axis=1, result_type="expand")
+        log("Labeling eye data.")
+        self.eye['condition'] = self.eye.progress_apply(add_cond, bounds=self.bounds, axis=1, result_type="expand")
+
+
 class CalibrainCLT(CalibrainTask):
     """
     Cognitive Load Task
@@ -132,6 +171,15 @@ class CalibrainMRT(CalibrainTask):
         self.performance = import_dataframe(
             path=self.dir / 'performance-mrt.csv'
         )
+
+    def add_trial_info_performance(self):
+        self.performance['trial'] = self.performance.groupby(['condition']).cumcount() + 1
+
+    # def add_trial_info_eye(self):
+    #     '''
+    #     Note: only to be executed AFTER add_trial_info_performance
+    #     '''
+    #
 
 
 class CalibrainData:
@@ -177,6 +225,8 @@ class CalibrainData:
             bounds=True,
             subjective=True,
         )
+        self.clt.convert_bounds_df()
+        self.clt.add_condition_labels()
 
         # MRT
         self.mrt = CalibrainMRT(
@@ -186,6 +236,8 @@ class CalibrainData:
             bounds=True,
             subjective=True,
         )
+        self.mrt.convert_bounds_df()
+        self.mrt.add_condition_labels()
 
     def __repr__(self):
 
@@ -203,5 +255,4 @@ if __name__ == '__main__':
     path_to_data = 'data/7_202205091017'
     data = CalibrainData(dir=path_to_data)
 
-    events = data.clt.bounds
-    events['shift'] = events.time.shift(-1)
+
