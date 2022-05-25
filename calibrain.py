@@ -10,8 +10,12 @@
 
 from pathlib import Path
 import pandas as pd
+import numpy as np
+from tqdm import tqdm
 import os
 from utils.helper import log, clean_col_name, hi, import_dataframe
+
+tqdm.pandas()
 
 
 ################
@@ -100,11 +104,23 @@ class CalibrainTask:
         for condition in ['1', '2', '3']:
             start = self.bounds[self.bounds['event'] == f'Condition: {condition}']['time'].iloc[0]
             end = self.bounds[self.bounds['event'] == f'Condition: Q{condition}']['time'].iloc[0]
-            bounds_dict['condition'].append(condition)
+            bounds_dict['condition'].append(int(condition))
             bounds_dict['start_time'].append(start)
             bounds_dict['end_time'].append(end)
         # dict to pd.df and overwrite bounds df
         self.bounds = pd.DataFrame.from_dict(bounds_dict)
+
+    def add_condition_labels(self):
+        def add_cond(row, bounds: pd.DataFrame) -> str:
+            records = bounds[(bounds["start_time"] <= row["time"]) & \
+                             (bounds["end_time"] > row["time"])]
+            if records.shape[0] < 1:
+                return np.nan
+            return records.iloc[0]["condition"]
+        log("Labeling heart data.")
+        self.heart['condition'] = self.heart.progress_apply(add_cond, bounds=self.bounds, axis=1, result_type="expand")
+        log("Labeling eye data.")
+        self.eye['condition'] = self.eye.progress_apply(add_cond, bounds=self.bounds, axis=1, result_type="expand")
 
 class CalibrainCLT(CalibrainTask):
     """
@@ -186,6 +202,7 @@ class CalibrainData:
             subjective=True,
         )
         self.clt.convert_bounds_df()
+        self.clt.add_condition_labels()
 
         # MRT
         self.mrt = CalibrainMRT(
@@ -196,6 +213,7 @@ class CalibrainData:
             subjective=True,
         )
         self.mrt.convert_bounds_df()
+        self.mrt.add_condition_labels()
 
     def __repr__(self):
 
