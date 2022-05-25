@@ -86,7 +86,7 @@ class CalibrainTask:
         # Delete columns used for calculation
         self.heart.drop(['cumsum_rri', 'cumsum_rri_td'], axis=1, inplace=True)
 
-    def convert_bounds_df(self):
+    def convert_bounds_df(self): # Hard coded for now because of data received from calibrain app. TODO!
         # create dict where data will be stored
         bounds_dict = {'condition': [], 'start_time': [], 'end_time':[]}
         # specify start and end times of baseline
