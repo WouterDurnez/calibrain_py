@@ -126,11 +126,11 @@ class CalibrainTask:
 
     def _add_condition_labels(self):
         def add_cond(row, bounds: pd.DataFrame) -> str:
-            records = bounds[(bounds["start_time"] <= row["time"]) & \
-                             (bounds["end_time"] > row["time"])]
+            records = bounds[(bounds["start"] <= row["time"]) & \
+                             (bounds["end"] > row["time"])]
             if records.shape[0] < 1:
                 return np.nan
-            return records.iloc[0]["condition"]
+            return records.iloc[0]["event"]
         log("Labeling heart data.")
         self.heart['condition'] = self.heart.progress_apply(add_cond, bounds=self.bounds, axis=1, result_type="expand")
         log("Labeling eye data.")
@@ -225,8 +225,8 @@ class CalibrainData:
             bounds=True,
             subjective=True,
         )
-        self.clt.convert_bounds_df()
-        self.clt.add_condition_labels()
+        self.clt._get_epochs()
+        self.clt._add_condition_labels()
 
         # MRT
         self.mrt = CalibrainMRT(
@@ -236,8 +236,8 @@ class CalibrainData:
             bounds=True,
             subjective=True,
         )
-        self.mrt.convert_bounds_df()
-        self.mrt.add_condition_labels()
+        self.mrt._get_epochs()
+        self.mrt._add_condition_labels()
 
     def __repr__(self):
 
