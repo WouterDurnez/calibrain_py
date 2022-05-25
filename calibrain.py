@@ -68,6 +68,35 @@ class CalibrainTask:
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
 
+    def _get_epochs(self):
+        self.bounds['end'] = self.bounds.time.shift(-1)
+        self.bounds = self.bounds.loc[
+            self.bounds.event.isin(
+                [
+                    'Marker: measuring baseline',
+                    'Condition: 0',
+                    'Condition: 1',
+                    'Condition: Q1',
+                    'Condition: 2',
+                    'Condition: Q2',
+                    'Condition: 3',
+                    'Condition: Q3',
+                ]
+            )
+        ]
+        self.bounds.loc[:, 'event'] = [
+            'baseline',
+            'practice',
+            'easy',
+            'easy_quest',
+            'medium',
+            'medium_quest',
+            'hard',
+            'hard_quest',
+        ]
+        self.bounds.rename(columns={'time': 'start'}, inplace=True)
+        self.bounds = self.bounds[['event', 'start', 'end']]
+
 
 class CalibrainCLT(CalibrainTask):
     """
@@ -85,23 +114,6 @@ class CalibrainCLT(CalibrainTask):
         self.performance = import_dataframe(
             path=self.dir / 'performance-clt.csv'
         )
-
-    def _get_epochs(self):
-        self.bounds['end'] = self.bounds.time.shift(-1)
-        self.bounds = self.bounds.loc[
-            self.bounds.event.isin(
-                [
-                    'Marker: measuring baseline',
-                    'Condition: 0',
-                    'Condition: 1',
-                    'Condition: 2',
-                    'Condition: 3',
-                ]
-            )
-        ]
-        self.bounds.event = ['baseline','practice','1back','2back','3back']
-        self.bounds.rename(columns={'time':'start'}, inplace=True)
-        self.bounds = self.bounds[['event','start','end']]
 
 
 class CalibrainMRT(CalibrainTask):
