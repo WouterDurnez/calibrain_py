@@ -30,15 +30,13 @@ class CalibrainTask:
 
     def __init__(self, dir: str | Path, **import_args):
 
-        super().__init__()
-
         # Set directory
         self.dir = Path(dir) if not isinstance(dir, Path) else dir
 
         # Load data
-        self.import_data(**import_args)
+        self._import_data(**import_args)
 
-    def import_data(
+    def _import_data(
         self,
         heart: bool = True,
         bounds: bool = True,
@@ -49,68 +47,84 @@ class CalibrainTask:
 
         if heart:
             log('Importing RR data.')
-            self.import_heart()
+            self._import_heart()
+            if time_fixer:
+              self._fix_timestamps_heart()
         if bounds:
-            log('Importing bounds data.')
-            self.import_bounds()
+            log('Importing event data.')
+            self._import_bounds()
         if subjective:
             log('Importing subjective data.')
-            self.import_subjective()
+            self._import_subjective()
         if eye:
             log('Importing eye tracking data.')
-            self.import_eye()
-        if time_fixer:
-            self.fix_timestamps_heart()
+            self._import_eye()
 
-    def import_heart(self):
+
+    def _import_heart(self):
         self.heart = import_dataframe(path=self.dir / 'raw-heart.csv')
 
-    def import_eye(self):
+    def _import_eye(self):
         self.eye = import_dataframe(path=self.dir / 'eye.csv')
 
-    def import_bounds(self):
+    def _import_bounds(self):
         self.bounds = import_dataframe(path=self.dir / 'events.csv')
 
-    def import_subjective(self):
+    def _import_subjective(self):
         self.subjective = import_dataframe(path=self.dir / 'questionnaire.csv')
         self.subjective['nasa_score'] = self.subjective[
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
 
-    def fix_timestamps_heart(self):
+    def _get_epochs(self):
+        self.bounds['end'] = self.bounds.time.shift(-1)
+        self.bounds = self.bounds.loc[
+            self.bounds.event.isin(
+                [
+                    'Marker: measuring baseline',
+                    'Condition: 0',
+                    'Condition: 1',
+                    'Condition: Q1',
+                    'Condition: 2',
+                    'Condition: Q2',
+                    'Condition: 3',
+                    'Condition: Q3',
+                ]
+            )
+        ]
+        self.bounds.loc[:, 'event'] = [
+            'baseline',
+            'practice',
+            'easy',
+            'easy_quest',
+            'medium',
+            'medium_quest',
+            'hard',
+            'hard_quest',
+        ]
+        self.bounds.rename(columns={'time': 'start'}, inplace=True)
+        self.bounds = self.bounds[['event', 'start', 'end']]
+
+
+    def _fix_timestamps_heart(self):
+      
         # Check for NaN values (should be 0)
         nans = sum(self.heart['rri'].isnull())
+        
         # Raise error when there are NaN values
         assert nans == 0, "There are {nans} NaN values in the heart data, experted 0."
+        
         # Fix timestamps based on RR data
         self.heart['cumsum_rri'] = self.heart['rri'].cumsum(axis=0)
         self.heart['cumsum_rri_td'] = pd.to_timedelta(
             self.heart['cumsum_rri'], 'ms')
         self.heart['time_new'] = self.heart['time'][0] + self.heart['cumsum_rri_td']
+        
         # Delete columns used for calculation
         self.heart.drop(['cumsum_rri', 'cumsum_rri_td'], axis=1, inplace=True)
 
-    def convert_bounds_df(self): # Hard coded for now because of data received from calibrain app. TODO!
-        # create dict where data will be stored
-        bounds_dict = {'condition': [], 'start_time': [], 'end_time':[]}
-        # specify start and end times of baseline
-        baseline_start = self.bounds[self.bounds['event'] == 'Marker: measuring baseline']['time'].iloc[0]
-        baseline_end = self.bounds[self.bounds['event'] == 'Marker: finished measuring baseline']['time'].iloc[0]
-        # add to dict
-        bounds_dict['condition'].append('baseline')
-        bounds_dict['start_time'].append(baseline_start)
-        bounds_dict['end_time'].append(baseline_end)
-        # specify start and end times of conditions and add to dict
-        for condition in ['1', '2', '3']:
-            start = self.bounds[self.bounds['event'] == f'Condition: {condition}']['time'].iloc[0]
-            end = self.bounds[self.bounds['event'] == f'Condition: Q{condition}']['time'].iloc[0]
-            bounds_dict['condition'].append(int(condition))
-            bounds_dict['start_time'].append(start)
-            bounds_dict['end_time'].append(end)
-        # dict to pd.df and overwrite bounds df
-        self.bounds = pd.DataFrame.from_dict(bounds_dict)
 
-    def add_condition_labels(self):
+    def _add_condition_labels(self):
         def add_cond(row, bounds: pd.DataFrame) -> str:
             records = bounds[(bounds["start_time"] <= row["time"]) & \
                              (bounds["end_time"] > row["time"])]
@@ -122,6 +136,7 @@ class CalibrainTask:
         log("Labeling eye data.")
         self.eye['condition'] = self.eye.progress_apply(add_cond, bounds=self.bounds, axis=1, result_type="expand")
 
+
 class CalibrainCLT(CalibrainTask):
     """
     Cognitive Load Task
@@ -130,10 +145,10 @@ class CalibrainCLT(CalibrainTask):
     def __init__(self, dir: str | Path, **import_args):
         log('Initializing CLT.', color='red')
         super().__init__(dir=dir)
-        self.import_performance()
+        self._import_performance()
 
     # Import performance data
-    def import_performance(self):
+    def _import_performance(self):
         log('Importing performance data.')
         self.performance = import_dataframe(
             path=self.dir / 'performance-clt.csv'
@@ -148,10 +163,10 @@ class CalibrainMRT(CalibrainTask):
     def __init__(self, dir: str | Path, **import_args):
         log('Initializing MRT.', color='red')
         super().__init__(dir=dir, **import_args)
-        self.import_performance()
+        self._import_performance()
 
     # Import performance data
-    def import_performance(self):
+    def _import_performance(self):
         log('Importing performance data.')
         self.performance = import_dataframe(
             path=self.dir / 'performance-mrt.csv'
@@ -179,7 +194,7 @@ class CalibrainData:
         self._check_valid_dir()
 
         # Import data
-        self.import_data()
+        self._import_data()
         self.pp = self.demo.id
 
     def _check_valid_dir(self):
@@ -193,7 +208,7 @@ class CalibrainData:
             'demographics.csv' in files_and_folders
         ), 'Expected demographics file in directory!'
 
-    def import_data(self):
+    def _import_data(self):
 
         # Demographics
         self.demo = (
@@ -240,4 +255,4 @@ if __name__ == '__main__':
     path_to_data = 'data/7_202205091017'
     data = CalibrainData(dir=path_to_data)
 
-    #bounds = data.clt.bounds
+
