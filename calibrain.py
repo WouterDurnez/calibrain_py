@@ -184,6 +184,9 @@ class CalibrainMRT(CalibrainTask):
         log('Initializing MRT.', color='red')
         super().__init__(dir=dir, **import_args)
         self._import_performance()
+        self._add_trial_info_performance()
+        self._get_trial_epochs()
+        self._add_trial_labels(eye=True)
 
     # Import performance data
     def _import_performance(self):
@@ -201,11 +204,57 @@ class CalibrainMRT(CalibrainTask):
             self.performance.groupby(['condition']).cumcount() + 1
         )
 
-    # def add_trial_info_eye(self):
-    #     '''
-    #     Note: only to be executed AFTER add_trial_info_performance
-    #     '''
-    #
+    def _get_trial_epochs(self):
+        self.trial_bounds = self.performance.filter(['condition', 'trial', 'timestamp', 'reaction_time'])
+        self.trial_bounds.rename(columns={'timestamp': 'timestamp_end', 'trial': 'trial_id'}, inplace=True)
+        # reaction time s --> ms
+        self.trial_bounds['reaction_time'] = self.trial_bounds['reaction_time']*1000
+        self.trial_bounds['timestamp_start'] = self.trial_bounds['timestamp_end'] - self.trial_bounds['reaction_time']
+        # reorder before converting from wide to long and drop reaction_time
+        self.trial_bounds = self.trial_bounds.filter(['condition', 'trial_id', 'timestamp_start', 'timestamp_end'])
+        # convert from wide to long to create bins later on
+        self.trial_bounds = pd.wide_to_long(
+            self.trial_bounds,
+            stubnames = 'timestamp',
+            sep='_',
+            i = ['condition', 'trial_id'],
+            j = 'event_type',
+            suffix=r'\w+'
+        )
+        self.trial_bounds.reset_index(
+            inplace=True
+        )
+
+    def _add_trial_labels(self, eye: bool = False):
+        '''
+        Note: only to be executed AFTER _add_trial_info_performance and _get_trial_epochs
+        '''
+
+        if not (eye or bool):
+            pass
+
+        # Get timestamps to make bins
+        bins = self.trial_bounds.timestamp
+        # create list with labels
+        ## get every second label (each label is in list column twice now)
+        labels = list(self.trial_bounds.trial_id)[::2]
+        # insert value between each element; this labels the time between trials
+        def insert_between_elements(lst, item):
+            result = [item] * (len(lst) * 2 - 1)
+            result[0::2] = lst
+            return result
+        labels = insert_between_elements(labels, np.nan)
+
+        if eye:
+            log('Labeling eye data (trials).')
+            # Add labels
+            self.eye['trial'] = pd.cut(
+                self.eye.timestamp,
+                bins=bins,
+                right=False,
+                labels=labels,
+                ordered=False,
+            )
 
 
 class CalibrainData:
@@ -273,5 +322,3 @@ if __name__ == '__main__':
 
     path_to_data = 'data/7_202205091017'
     data = CalibrainData(dir=path_to_data)
-
-    heart = data.clt.heart
