@@ -192,7 +192,11 @@ class CalibrainMRT(CalibrainTask):
             path=self.dir / 'performance-mrt.csv'
         )
 
-    def add_trial_info_performance(self):
+    def _add_trial_info_performance(self):
+        '''
+        For the MRT, there are analysis on trial-level. Therefore, we have to label the data first.
+        We do this using the performance data.
+        '''
         self.performance['trial'] = (
             self.performance.groupby(['condition']).cumcount() + 1
         )
