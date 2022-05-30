@@ -7,13 +7,14 @@
 - Coded by Wouter Durnez & Jonas De Bruyne
 """
 
-
-from pathlib import Path
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
 import os
-from utils.helper import log, clean_col_name, hi, import_dataframe
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+from utils.helper import log, hi, import_dataframe
 
 tqdm.pandas()
 
@@ -42,17 +43,15 @@ class CalibrainTask:
         bounds: bool = True,
         subjective: bool = True,
         eye: bool = True,
-        time_fixer: bool = True,
     ):
 
         if heart:
             log('Importing RR data.')
             self._import_heart()
-            if time_fixer:
-              self._fix_timestamps_heart()
+
         if bounds:
             log('Importing event data.')
-            self._import_bounds()
+            self._import_events()
         if subjective:
             log('Importing subjective data.')
             self._import_subjective()
@@ -60,6 +59,8 @@ class CalibrainTask:
             log('Importing eye tracking data.')
             self._import_eye()
 
+        if eye or heart:
+            self._add_condition_labels(eye=eye, heart=heart)
 
     def _import_heart(self):
         self.heart = import_dataframe(path=self.dir / 'raw-heart.csv')
@@ -67,8 +68,41 @@ class CalibrainTask:
     def _import_eye(self):
         self.eye = import_dataframe(path=self.dir / 'eye.csv')
 
-    def _import_bounds(self):
-        self.bounds = import_dataframe(path=self.dir / 'events.csv')
+    def _import_events(self):
+
+        # Read and format data
+        self.events = import_dataframe(path=self.dir / 'events.csv')
+        self.events.replace(
+            to_replace={
+                'New subfolder: MRT': 'task_start',
+                'New subfolder: CLT': 'task_start',
+                'Marker: measuring baseline': 'baseline_start',
+                'Marker: finished measuring baseline': 'baseline_end',
+                'Condition: 0': 'practice',
+                'Condition: 1': 'easy',
+                'Condition: Q1': 'easy_q',
+                'Condition: 2': 'medium',
+                'Condition: Q2': 'medium_q',
+                'Condition: 3': 'hard',
+                'Condition: Q3': 'hard_q',
+            },
+            inplace=True,
+        )
+
+        # Drop some rows
+        allowed = [
+            'task_start',
+            'baseline_start',
+            'baseline_end',
+            'practice',
+            'easy',
+            'easy_q',
+            'medium',
+            'medium_q',
+            'hard',
+            'hard_q',
+        ]
+        self.events = self.events.loc[self.events.event.isin(allowed)]
 
     def _import_subjective(self):
         self.subjective = import_dataframe(path=self.dir / 'questionnaire.csv')
@@ -76,65 +110,48 @@ class CalibrainTask:
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
 
-    def _get_epochs(self):
-        self.bounds['end'] = self.bounds.time.shift(-1)
-        self.bounds = self.bounds.loc[
-            self.bounds.event.isin(
-                [
-                    'Marker: measuring baseline',
-                    'Condition: 0',
-                    'Condition: 1',
-                    'Condition: Q1',
-                    'Condition: 2',
-                    'Condition: Q2',
-                    'Condition: 3',
-                    'Condition: Q3',
-                ]
-            )
-        ]
-        self.bounds.loc[:, 'event'] = [
+    def _add_condition_labels(self, eye: bool = False, heart: bool = False):
+
+        if not (eye or bool):
+            pass
+
+        # Get timestamps to make bins
+        bins = self.events.timestamp
+        labels = [
+            np.nan,
             'baseline',
+            np.nan,
             'practice',
             'easy',
-            'easy_quest',
+            np.nan,
             'medium',
-            'medium_quest',
+            np.nan,
             'hard',
-            'hard_quest',
         ]
-        self.bounds.rename(columns={'time': 'start'}, inplace=True)
-        self.bounds = self.bounds[['event', 'start', 'end']]
 
+        if eye:
+            log('Labeling eye data.')
+            # Add labels
+            self.eye['event'] = pd.cut(
+                self.eye.timestamp,
+                bins=bins,
+                right=False,
+                labels=labels,
+                ordered=False,
+            )
 
-    def _fix_timestamps_heart(self):
-      
-        # Check for NaN values (should be 0)
-        nans = sum(self.heart['rri'].isnull())
-        
-        # Raise error when there are NaN values
-        assert nans == 0, "There are {nans} NaN values in the heart data, experted 0."
-        
-        # Fix timestamps based on RR data
-        self.heart['cumsum_rri'] = self.heart['rri'].cumsum(axis=0)
-        self.heart['cumsum_rri_td'] = pd.to_timedelta(
-            self.heart['cumsum_rri'], 'ms')
-        self.heart['time_new'] = self.heart['time'][0] + self.heart['cumsum_rri_td']
-        
-        # Delete columns used for calculation
-        self.heart.drop(['cumsum_rri', 'cumsum_rri_td'], axis=1, inplace=True)
-
-
-    def _add_condition_labels(self):
-        def add_cond(row, bounds: pd.DataFrame) -> str:
-            records = bounds[(bounds["start_time"] <= row["time"]) & \
-                             (bounds["end_time"] > row["time"])]
-            if records.shape[0] < 1:
-                return np.nan
-            return records.iloc[0]["condition"]
-        log("Labeling heart data.")
-        self.heart['condition'] = self.heart.progress_apply(add_cond, bounds=self.bounds, axis=1, result_type="expand")
-        log("Labeling eye data.")
-        self.eye['condition'] = self.eye.progress_apply(add_cond, bounds=self.bounds, axis=1, result_type="expand")
+        if heart:
+            log('Labeling RR data.')
+            # Add labels
+            self.heart['event'] = pd.cut(
+                self.heart.timestamp,
+                bins=bins,
+                right=False,
+                labels=labels,
+                ordered=False,
+            )
+            # Lose some weight
+            self.heart.drop(labels=['timestamp', 'time'], axis=1, inplace=True)
 
 
 class CalibrainCLT(CalibrainTask):
@@ -143,6 +160,7 @@ class CalibrainCLT(CalibrainTask):
     """
 
     def __init__(self, dir: str | Path, **import_args):
+        # Initialize and import requested data
         log('Initializing CLT.', color='red')
         super().__init__(dir=dir)
         self._import_performance()
@@ -161,6 +179,7 @@ class CalibrainMRT(CalibrainTask):
     """
 
     def __init__(self, dir: str | Path, **import_args):
+        # Initialize and import requested data
         log('Initializing MRT.', color='red')
         super().__init__(dir=dir, **import_args)
         self._import_performance()
@@ -173,7 +192,9 @@ class CalibrainMRT(CalibrainTask):
         )
 
     def add_trial_info_performance(self):
-        self.performance['trial'] = self.performance.groupby(['condition']).cumcount() + 1
+        self.performance['trial'] = (
+            self.performance.groupby(['condition']).cumcount() + 1
+        )
 
     # def add_trial_info_eye(self):
     #     '''
@@ -209,7 +230,6 @@ class CalibrainData:
         ), 'Expected demographics file in directory!'
 
     def _import_data(self):
-
         # Demographics
         self.demo = (
             import_dataframe(path=self.dir / 'demographics.csv')
@@ -225,8 +245,6 @@ class CalibrainData:
             bounds=True,
             subjective=True,
         )
-        self.clt.convert_bounds_df()
-        self.clt.add_condition_labels()
 
         # MRT
         self.mrt = CalibrainMRT(
@@ -236,23 +254,18 @@ class CalibrainData:
             bounds=True,
             subjective=True,
         )
-        self.mrt.convert_bounds_df()
-        self.mrt.add_condition_labels()
 
     def __repr__(self):
-
         return f'Calibrain data object <id {self.demo.id}; timestamp {self.demo.timestamp}>'
 
     def __str__(self):
-
         return f'Calibrain data object <id {self.demo.id}; timestamp {self.demo.timestamp}>'
 
 
 if __name__ == '__main__':
-
     hi('Test!')
 
     path_to_data = 'data/7_202205091017'
     data = CalibrainData(dir=path_to_data)
 
-
+    heart = data.clt.heart
