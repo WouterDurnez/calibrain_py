@@ -60,7 +60,7 @@ def calculate_performance_CLT(data: pd.DataFrame):
 
         mask = (
          data_new.loc[data_new.condition == 1]
-         .groupby("condition")["condition"]
+         .groupby('condition')['condition']
          .transform(mask_first_2trials)
          .astype(bool)
         )
@@ -68,7 +68,7 @@ def calculate_performance_CLT(data: pd.DataFrame):
 
         mask = (
          data_new.loc[data_new.condition == 2]
-         .groupby("condition")["condition"]
+         .groupby('condition')['condition']
          .transform(mask_first_3trials)
          .astype(bool)
         )
@@ -76,7 +76,7 @@ def calculate_performance_CLT(data: pd.DataFrame):
 
         mask = (
          data_new.loc[data_new.condition == 3]
-         .groupby("condition")["condition"]
+         .groupby('condition')['condition']
          .transform(mask_first_4trials)
          .astype(bool)
         )
@@ -86,57 +86,57 @@ def calculate_performance_CLT(data: pd.DataFrame):
 
         wrong_count = (
             data_new.loc[data_new.accuracy == -1]
-                .groupby("condition", as_index=False)
+                .groupby('condition', as_index=False)
                 .accuracy.count()
         )
 
         correct_count = (
             data_new.loc[data_new.accuracy == 1]
-                .groupby("condition", as_index=False)
+                .groupby('condition', as_index=False)
                 .accuracy.count()
         )
 
         dropped_count = (
             data_new.loc[data_new.accuracy == 0]
-                .groupby("condition", as_index=False)
+                .groupby('condition', as_index=False)
                 .accuracy.count()
         )
 
         total_count = (
-            data_new.groupby("condition", as_index=False)
+            data_new.groupby('condition', as_index=False)
                 .accuracy.count()
         )
 
-        wrong_count.rename(columns={"accuracy": "wrong_count"}, inplace=True)
-        correct_count.rename(columns={"accuracy": "correct_count"}, inplace=True)
-        dropped_count.rename(columns={"accuracy": "dropped_count"}, inplace=True)
-        total_count.rename(columns={"accuracy": "total_count"}, inplace=True)
+        wrong_count.rename(columns={'accuracy': 'wrong_count'}, inplace=True)
+        correct_count.rename(columns={'accuracy': 'correct_count'}, inplace=True)
+        dropped_count.rename(columns={'accuracy': 'dropped_count'}, inplace=True)
+        total_count.rename(columns={'accuracy': 'total_count'}, inplace=True)
 
         return wrong_count, correct_count, dropped_count, total_count
 
     def get_performance_matrix(wrong_count, correct_count, dropped_count, total_count):
-        performance_matrix = pd.merge(correct_count, wrong_count, how="outer")
-        performance_matrix = pd.merge(performance_matrix, dropped_count, how="outer")
-        performance_matrix = pd.merge(performance_matrix, total_count, how="outer")
+        performance_matrix = pd.merge(correct_count, wrong_count, how='outer')
+        performance_matrix = pd.merge(performance_matrix, dropped_count, how='outer')
+        performance_matrix = pd.merge(performance_matrix, total_count, how='outer')
 
         # Replace nan values with zeros
         performance_matrix.fillna(0, inplace=True)
 
         # Calculate percentage correct, wrong and dropped
-        performance_matrix["correct_prop"] = (
-                performance_matrix["correct_count"] / performance_matrix["total_count"]
+        performance_matrix['correct_prop'] = (
+                performance_matrix['correct_count'] / performance_matrix['total_count']
         )
-        performance_matrix["wrong_prop"] = (
-                performance_matrix["wrong_count"] / performance_matrix["total_count"]
+        performance_matrix['wrong_prop'] = (
+                performance_matrix['wrong_count'] / performance_matrix['total_count']
         )
-        performance_matrix["dropped_prop"] = (
-                performance_matrix["dropped_count"] / performance_matrix["total_count"]
+        performance_matrix['dropped_prop'] = (
+                performance_matrix['dropped_count'] / performance_matrix['total_count']
         )
 
         # delete condition 0 and NaN
         to_be_deleted = performance_matrix.loc[
-            (performance_matrix["condition"] == 0)
-            | (performance_matrix["condition"] == np.nan)
+            (performance_matrix['condition'] == 0)
+            | (performance_matrix['condition'] == np.nan)
             ]
         to_be_deleted_rows_indeces = list(to_be_deleted.index)
         performance_matrix.drop(to_be_deleted_rows_indeces, axis=0, inplace=True)
@@ -146,6 +146,15 @@ def calculate_performance_CLT(data: pd.DataFrame):
     delete_firsts(data_new)
     wrong_count, correct_count, dropped_count, total_count = calculate_accuracy(data_new)
     performance_matrix = get_performance_matrix(wrong_count, correct_count, dropped_count, total_count)
+
+    return performance_matrix
+
+    def calculate_performance_CLT(data: pd.DataFrame):
+
+    '''
+
+    '''
+
 
     return performance_matrix
 
