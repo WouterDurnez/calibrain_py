@@ -230,9 +230,6 @@ class CalibrainMRT(CalibrainTask):
         Note: only to be executed AFTER _add_trial_info_performance and _get_trial_epochs
         '''
 
-        if not (eye or bool):
-            pass
-
         # Get timestamps to make bins
         bins = self.trial_bounds.timestamp
         # create list with labels
