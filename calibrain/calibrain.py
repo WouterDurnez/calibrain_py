@@ -320,5 +320,5 @@ class CalibrainData:
 if __name__ == '__main__':
     hi('Test!')
 
-    path_to_data = 'data/7_202205091017'
+    path_to_data = '../data/7_202205091017'
     data = CalibrainData(dir=path_to_data)
