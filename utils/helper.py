@@ -73,6 +73,7 @@ def log(
         'magenta': Fore.MAGENTA,
         'cyan': Fore.CYAN,
     }
+    assert color in color_dict or color is None, 'Please pick a valid color for logging (red, green, blue, yellow, magenta or cyan).'
     if color and color in color_dict:
         color = color_dict[color]
 
@@ -166,7 +167,7 @@ def clean_col_name(col: str):
     return col
 
 
-def import_dataframe(path: str|Path, **kwargs):
+def import_data_frame(path: str | Path, **kwargs):
 
     df = pd.read_csv(filepath_or_buffer=path, **kwargs)
     df.columns = [clean_col_name(col) for col in df.columns]
