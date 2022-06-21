@@ -221,7 +221,7 @@ def calculate_performance_MRT(data: pd.DataFrame):
 
 
 if __name__ == '__main__':
-    path_to_data = '../../data/test_202206021426'
+    path_to_data = '../data/test_202206021426'
     data = calibrain.CalibrainData(dir=path_to_data)
 
     performance_data = data.clt.performance
