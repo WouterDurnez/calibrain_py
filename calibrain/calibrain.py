@@ -17,9 +17,12 @@ from tqdm import tqdm
 from utils.helper import log, hi, import_data_frame
 
 from eye.preprocessing import pipeline as eye_pipeline
+from performance.preproc_and_features import (
+    calculate_performance_CLT as CLT_perf_pipeline,
+    calculate_performance_MRT as MRT_perf_pipeline,
+)
 
 tqdm.pandas()
-
 
 ################
 # Data classes #
@@ -205,14 +208,14 @@ class CalibrainTask:
         if heart:
             pass # TODO
 
+
         if eye:
             log('Preprocessing eye tracking data.')
             self._preprocess_eye()
 
-
     def _preprocess_eye(self):
 
-        eye_pipeline(data=self.eye, show_plot=True)
+        eye_pipeline(data=self.eye) # show_plot=True
 
 
 
@@ -226,6 +229,7 @@ class CalibrainCLT(CalibrainTask):
         log('Initializing CLT.', color='red', title=True)
         super().__init__(dir=dir)
         self._import_performance()
+        self._preprocess_performance()
 
     # Import performance data
     def _import_performance(self):
@@ -233,6 +237,9 @@ class CalibrainCLT(CalibrainTask):
         self.performance = import_data_frame(
             path=self.dir / 'performance-clt.csv'
         )
+
+    def _preprocess_performance(self):
+        self.performance_features = CLT_perf_pipeline(data = self.performance)
 
 
 class CalibrainMRT(CalibrainTask):
@@ -245,6 +252,7 @@ class CalibrainMRT(CalibrainTask):
         log('Initializing MRT.', color='red', title=True)
         super().__init__(dir=dir, **measure_args)
         self._import_performance()
+        self._preprocess_performance()
         self._add_trial_info_performance()
         self._get_trial_epochs()
         self._add_trial_labels(eye=True)
@@ -255,6 +263,9 @@ class CalibrainMRT(CalibrainTask):
         self.performance = import_data_frame(
             path=self.dir / 'performance-mrt.csv'
         )
+
+    def _preprocess_performance(self):
+        self.performance_features = MRT_perf_pipeline(data = self.performance)
 
     def _add_trial_info_performance(self):
         """
@@ -410,7 +421,7 @@ class CalibrainData:
 if __name__ == '__main__':
     hi('Test!')
 
-    path_to_data = '../data/7_202205091017'
+    path_to_data = '../data/test_202206021426'
     data = CalibrainData(dir=path_to_data,
                          mrt={'heart':False, 'events': True},
                          clt={})
