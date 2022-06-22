@@ -10,7 +10,7 @@
 import numpy as np
 import pandas as pd
 
-from calibrain import calibrain
+# from calibrain import calibrain
 
 from utils.helper import log
 
@@ -22,7 +22,7 @@ def calculate_performance_CLT(data: pd.DataFrame):
     :return: pd.DataFrame containing features of subject's performance
     '''
 
-    log("Calculating performance measures.")
+    log("Calculating performance features.")
 
     # copy so we don't change original data
     data_new = data.copy()
@@ -119,6 +119,9 @@ def calculate_performance_CLT(data: pd.DataFrame):
 
 
 def calculate_performance_MRT(data: pd.DataFrame):
+
+    log("Calculating performance features.")
+
     # copy so we don't change original data
     data_new = data.copy()
 
@@ -222,7 +225,7 @@ def calculate_performance_MRT(data: pd.DataFrame):
 
 if __name__ == '__main__':
     path_to_data = '../data/test_202206021426'
-    data = calibrain.CalibrainData(dir=path_to_data)
-
-    performance_data = data.clt.performance
-    test = calculate_performance_CLT(performance_data)
+    # data = calibrain.CalibrainData(dir=path_to_data)
+    #
+    # performance_data = data.clt.performance
+    # test = calculate_performance_CLT(performance_data)
