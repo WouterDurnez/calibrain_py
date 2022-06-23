@@ -197,7 +197,7 @@ class CalibrainTask:
                 ordered=False,
             )
             # Lose some weight
-            self.heart.drop(labels=['timestamp', 'time'], axis=1, inplace=True)
+            self.heart.drop(labels=['time'], axis=1, inplace=True)
 
     def _preprocess_data(self,
                          heart: bool = True,
