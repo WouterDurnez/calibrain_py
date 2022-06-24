@@ -150,6 +150,7 @@ def calculate_performance_MRT(data: pd.DataFrame):
         return wrong_count, correct_count, total_count
 
     def clean_rt_data(data_new: pd.DataFrame):
+
         # delete unusually fast responses (< 500 ms)
         threshold = 0.5
         data_new['rt_clean'] = data_new['reaction_time'].copy()
@@ -164,6 +165,9 @@ def calculate_performance_MRT(data: pd.DataFrame):
             ] = None
 
     def calculate_rt_measures(data_new):
+        # only select correct responses
+        data_new = data_new[data_new['accuracy'] == 1]
+
         median_rt = data_new.groupby('condition', as_index=False)['rt_clean'].median()
         median_rt.rename(columns={"rt_clean": "median_rt"}, inplace=True)
 
