@@ -80,34 +80,66 @@ class CalibrainTask:
 
     def _import_eye(self):
         self.eye = import_data_frame(path=self.dir / 'eye.csv')
-        self.eye = self.eye.filter(
-            items=[
+        if 'gaze_object' in self.eye.columns:
+            self.eye = self.eye.filter(
+                items=[
+                    'timestamp','time',
+                    'verbose.left.eyeopenness',
+                    'verbose.left.gazedirectionnormalized.x',
+                    'verbose.left.gazedirectionnormalized.y',
+                    'verbose.left.gazedirectionnormalized.z',
+                    'verbose.left.pupildiametermm',
+                    'verbose.right.eyeopenness',
+                    'verbose.right.gazedirectionnormalized.x',
+                    'verbose.right.gazedirectionnormalized.y',
+                    'verbose.right.gazedirectionnormalized.z',
+                    'verbose.right.pupildiametermm',
+                    'gaze_object',
+                ]
+            )
+            self.eye.columns = (
                 'timestamp','time',
-                'verbose.left.eyeopenness',
-                'verbose.left.gazedirectionnormalized.x',
-                'verbose.left.gazedirectionnormalized.y',
-                'verbose.left.gazedirectionnormalized.z',
-                'verbose.left.pupildiametermm',
-                'verbose.right.eyeopenness',
-                'verbose.right.gazedirectionnormalized.x',
-                'verbose.right.gazedirectionnormalized.y',
-                'verbose.right.gazedirectionnormalized.z',
-                'verbose.right.pupildiametermm',
-            ]
-        )
-        self.eye.columns = (
-            'timestamp','time',
-            'left_openness',
-            'left_gaze_direction_x',
-            'left_gaze_direction_y',
-            'left_gaze_direction_z',
-            'left_pupil_size',
-            'right_openness',
-            'right_gaze_direction_x',
-            'right_gaze_direction_y',
-            'right_gaze_direction_z',
-            'right_pupil_size',
-        )
+                'left_openness',
+                'left_gaze_direction_x',
+                'left_gaze_direction_y',
+                'left_gaze_direction_z',
+                'left_pupil_size',
+                'right_openness',
+                'right_gaze_direction_x',
+                'right_gaze_direction_y',
+                'right_gaze_direction_z',
+                'right_pupil_size',
+                'gaze_object',
+            )
+        if 'gaze_object' not in self.eye.columns:
+            self.eye = self.eye.filter(
+                items=[
+                    'timestamp', 'time',
+                    'verbose.left.eyeopenness',
+                    'verbose.left.gazedirectionnormalized.x',
+                    'verbose.left.gazedirectionnormalized.y',
+                    'verbose.left.gazedirectionnormalized.z',
+                    'verbose.left.pupildiametermm',
+                    'verbose.right.eyeopenness',
+                    'verbose.right.gazedirectionnormalized.x',
+                    'verbose.right.gazedirectionnormalized.y',
+                    'verbose.right.gazedirectionnormalized.z',
+                    'verbose.right.pupildiametermm',
+                ]
+            )
+            self.eye.columns = (
+                'timestamp', 'time',
+                'left_openness',
+                'left_gaze_direction_x',
+                'left_gaze_direction_y',
+                'left_gaze_direction_z',
+                'left_pupil_size',
+                'right_openness',
+                'right_gaze_direction_x',
+                'right_gaze_direction_y',
+                'right_gaze_direction_z',
+                'right_pupil_size',
+            )
 
     def _import_events(self):
 
