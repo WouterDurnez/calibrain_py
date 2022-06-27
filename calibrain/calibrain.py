@@ -147,6 +147,7 @@ class CalibrainTask:
 
     def _import_subjective(self):
         self.subjective = import_data_frame(path=self.dir / 'questionnaire.csv')
+        self.subjective['pe'] = 10 - self.subjective['pe']
         self.subjective['nasa_score'] = self.subjective[
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
