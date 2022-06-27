@@ -46,19 +46,19 @@ class CalibrainTask:
     # IMPORT METHODS #
     ##################
 
+    # Lump import function
     def _import_data(
         self,
         heart: bool = True,
         events: bool = True,
         subjective: bool = True,
         eye: bool = True,
-        **kwargs
+        **kwargs,
     ):
 
         if heart:
             log('Importing RR data.')
             self._import_heart()
-
         if events:
             log('Importing event data.')
             self._import_events()
@@ -68,7 +68,6 @@ class CalibrainTask:
         if eye:
             log('Importing eye tracking data.')
             self._import_eye()
-
         if eye or heart:
             self._add_condition_labels(eye=eye, heart=heart)
 
@@ -79,7 +78,8 @@ class CalibrainTask:
         self.eye = import_data_frame(path=self.dir / 'eye.csv')
         self.eye = self.eye.filter(
             items=[
-                'timestamp','time',
+                'timestamp',
+                'time',
                 'verbose.left.eyeopenness',
                 'verbose.left.gazedirectionnormalized.x',
                 'verbose.left.gazedirectionnormalized.y',
@@ -90,10 +90,12 @@ class CalibrainTask:
                 'verbose.right.gazedirectionnormalized.y',
                 'verbose.right.gazedirectionnormalized.z',
                 'verbose.right.pupildiametermm',
+                'gaze_object',
             ]
         )
         self.eye.columns = (
-            'timestamp','time',
+            'timestamp',
+            'time',
             'left_openness',
             'left_gaze_direction_x',
             'left_gaze_direction_y',
@@ -104,6 +106,7 @@ class CalibrainTask:
             'right_gaze_direction_y',
             'right_gaze_direction_z',
             'right_pupil_size',
+            'gaze_object'
         )
 
     def _import_events(self):
@@ -143,7 +146,9 @@ class CalibrainTask:
         self.events = self.events.loc[self.events.event.isin(allowed)]
 
     def _import_subjective(self):
-        self.subjective = import_data_frame(path=self.dir / 'questionnaire.csv')
+        self.subjective = import_data_frame(
+            path=self.dir / 'questionnaire.csv'
+        )
         self.subjective['nasa_score'] = self.subjective[
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
@@ -196,24 +201,24 @@ class CalibrainTask:
             # Lose some weight
             self.heart.drop(labels=['timestamp', 'time'], axis=1, inplace=True)
 
-    def _preprocess_data(self,
-                         heart: bool = True,
-                         subjective: bool = True,
-                         eye: bool = True,
-                         **kwargs):
+    def _preprocess_data(
+        self,
+        heart: bool = True,
+        subjective: bool = True,
+        eye: bool = True,
+        **kwargs,
+    ):
 
         if heart:
-            pass # TODO
+            pass   # TODO
 
         if eye:
             log('Preprocessing eye tracking data.')
             self._preprocess_eye()
 
-
     def _preprocess_eye(self):
 
-        eye_pipeline(data=self.eye, show_plot=True)
-
+        eye_pipeline(data=self.eye, show_plots=True)
 
 
 class CalibrainCLT(CalibrainTask):
@@ -295,10 +300,14 @@ class CalibrainMRT(CalibrainTask):
         )
         self.trial_bounds.reset_index(inplace=True)
 
-    def _add_trial_labels(self, eye: bool = False):
+    def _add_trial_labels(self, eye: bool = False, heart:bool = False):
         """
         Note: only to be executed AFTER _add_trial_info_performance and _get_trial_epochs
         """
+
+        # We can skip the whole method if no measurement is selected
+        if not (eye or heart):
+            return
 
         # Get timestamps to make bins
         bins = self.trial_bounds.timestamp
@@ -411,6 +420,6 @@ if __name__ == '__main__':
     hi('Test!')
 
     path_to_data = '../data/7_202205091017'
-    data = CalibrainData(dir=path_to_data,
-                         mrt={'heart':False, 'events': True},
-                         clt={})
+    data = CalibrainData(
+        dir=path_to_data, mrt={'heart': False, 'events': True}, clt={}
+    )
