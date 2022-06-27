@@ -300,13 +300,14 @@ class CalibrainMRT(CalibrainTask):
         )
         self.trial_bounds.reset_index(inplace=True)
 
-    def _add_trial_labels(self, eye: bool = False):
+    def _add_trial_labels(self, eye: bool = False, heart:bool = False):
         """
         Note: only to be executed AFTER _add_trial_info_performance and _get_trial_epochs
         """
 
-        if not eye:
-            pass
+        # We can skip the whole method if no measurement is selected
+        if not (eye or heart):
+            return
 
         # Get timestamps to make bins
         bins = self.trial_bounds.timestamp
