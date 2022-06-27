@@ -9,6 +9,7 @@ from utils.helper import log, import_data_frame
 
 pd.options.plotting.backend = 'plotly'
 import plotly.express as px
+import plotly.graph_objects as go
 
 
 def clean_missing_data(
@@ -63,6 +64,7 @@ def calculate_gaze_velocity(
 def remove_outliers_mad(
     data: pd.DataFrame,
     on: str = 'velocity',
+    pupil_col: str = 'left_pupil_size',
     n: int = 3,
     show_plot: bool = False,
 ):
@@ -77,6 +79,7 @@ def remove_outliers_mad(
 
     # Original number of data points
     n_before = len(data)
+    n_missing_before = data.left_pupil_size.isna().sum()
 
     # Median absolute deviation
     median = data[on].median()
@@ -101,15 +104,18 @@ def remove_outliers_mad(
         fig.show()
 
     # Filter
-    bool_series = data[on] < median + n * mad
-    data.query('@bool_series', inplace=True)
+    bool_series = data[on] > median + n * mad
+    data.loc[bool_series, pupil_col] = np.nan
 
     # New number of data points
-    n_after = len(data)
-    percentage_reduction = 1 - round((n_before - n_after) / n_before, 2)
+    n_missing_after = data.left_pupil_size.isna().sum()
+    new_missing = n_missing_after - n_missing_before
+    percentage_reduction = round(
+        new_missing / (n_before - n_missing_before), 2
+    )
 
     log(
-        f"Removed outliers based on '{on}' column: {n_before} -> {n_after} data points ({percentage_reduction}% less)."
+        f"Removed outliers based on '{on}' column: {n_before - n_missing_before} -> {n_before - n_missing_after} data points ({percentage_reduction}% less)."
     )
 
 
@@ -179,7 +185,7 @@ def remove_edge_artifacts(
     if min_ms:
         gaps = [(x, y, z) for (x, y, z) in gaps if z >= min_ms]
 
-    if len(gaps) > 100:
+    if len(gaps) > 100 and show_plot:
         log(
             f'{len(gaps)} gaps identified in edge artifact removal! Only drawing the first 100.',
             color='magenta',
@@ -198,7 +204,9 @@ def remove_edge_artifacts(
         ] = np.nan
 
         if show_plot and idx <= 100:
-            fig.add_vrect(start, stop, fillcolor='orange', line_width=0, opacity=0.5)
+            fig.add_vrect(
+                start, stop, fillcolor='orange', line_width=0, opacity=0.5
+            )
 
     if show_plot:
         fig.show()
@@ -237,6 +245,7 @@ def pipeline(
         remove_outliers_mad(data=data, show_plot=show_plots)
 
     # Get rid of edge artifacts
+    gaps = None
     if edge_artifacts:
         log('Removing edge artifacts.')
         gaps = remove_edge_artifacts(
@@ -246,6 +255,9 @@ def pipeline(
             show_plot=show_plots,
         )
 
+    # Set timestamp as index
+    #data.set_index('timestamp', inplace=True)
+
     return gaps
 
 
@@ -254,7 +266,7 @@ if __name__ == '__main__':
     print('Test area!')
 
     # Prep data
-    data = import_data_frame(path='../data/7_202205091017/CLT/eye.csv')
+    data = import_data_frame(path='../data/8_202205091310/MRT/eye.csv')
     data = data.filter(
         items=[
             'timestamp',
@@ -269,6 +281,7 @@ if __name__ == '__main__':
             'verbose.right.gazedirectionnormalized.y',
             'verbose.right.gazedirectionnormalized.z',
             'verbose.right.pupildiametermm',
+            'gaze_object',
         ]
     )
     data.columns = (
@@ -284,9 +297,31 @@ if __name__ == '__main__':
         'right_gaze_direction_y',
         'right_gaze_direction_z',
         'right_pupil_size',
+        'gaze_object',
     )
 
     # Try pipeline
     gaps = pipeline(
-        data=data, outliers=False, edge_artifacts=True, show_plots=True
+        data=data, outliers=True, edge_artifacts=False, show_plots=True
     )
+
+    fig = data.left_pupil_size.plot()
+    data.set_index('timestamp', inplace=True)
+    for args in (
+        {'method': 'cubic'},
+        {'method': 'spline', 'order': 3},
+        {'method': 'from_derivatives'},
+    ):
+        data['left_pupil_size_smoothed'] = data.left_pupil_size.interpolate(
+            **args
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=data.index,
+                y=data.left_pupil_size_smoothed,
+                mode='lines',
+                name=f'left_pupil_size_smoothed_{args["method"]}',
+                opacity=0.3,
+            )
+        )
+    fig.show()
