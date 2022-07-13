@@ -1,0 +1,89 @@
+---
+######################
+# TEST CONFIGURATION #
+######################
+
+###########################
+# 1. Mental Rotation task #
+###########################
+mrt:
+
+  # Heart rate parameters
+  heart: True   # If True, default parameters are used
+
+  # Eye tracking parameters
+  eye:
+
+    # Eye tracking preprocessing
+    preprocessing:
+
+      time_col: timestamp
+      pupil_col: left_pupil_size
+
+      remove_edge_artifacts_params:
+        min_ms: 75
+        buffer_ms: 50
+        show_plot: False
+
+      remove_outliers_params:
+        on_col: velocity
+        n: 3
+        show_plot: False
+
+    feature_calculation:
+
+      dummy_feature:
+        par1: 1
+        par2: True
+
+  # Events parameters
+  events: True
+
+  # Performance parameters
+  performance: True
+
+  # Subjective parameters
+  subjective: True
+
+##########################
+# 2. Cognitive Load task #
+#########################
+
+clt:
+
+  # Heart rate parameters
+  heart: True
+
+  # Eye tracking parameters
+  eye:
+
+    # Eye tracking preprocessing
+    preprocessing:
+
+      time_col: timestamp                 # Timestamp column (unix)
+      pupil_col: left_pupil_size          # Pupil dilation column
+
+      remove_edge_artifacts_params:       # Edge artifact removal (False to deactivate)
+        min_ms: 75                          # Minimal gap duration
+        buffer_ms: 50                       # Buffer window on either side of the gap
+        show_plot: False
+
+      remove_outliers_params:             # Outlier removal (False to deactivate)
+        on_col: velocity                    # Column to calculate outliers on (currently only velocity)
+        n: 3                                # Threshold factor
+        show_plot: False
+
+    feature_calculation:
+
+      dummy_feature:
+        par1: 1
+        par2: True
+
+  # Events parameters
+  events: True
+
+  # Performance parameters
+  performance: True
+
+  # Subjective parameters
+  subjective: True

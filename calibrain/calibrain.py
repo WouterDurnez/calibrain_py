@@ -12,13 +12,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import toml
 from tqdm import tqdm
 
 from utils.helper import log, hi, import_data_frame
-
+import utils.helper as hlp
 from eye.preprocessing import pipeline as eye_pipeline
 
-tqdm.pandas()
 
 
 ################
@@ -31,52 +31,56 @@ class CalibrainTask:
     Boilerplate class for Calibrain measurements tasks
     """
 
-    def __init__(self, dir: str | Path, **measure_args):
+    def __init__(self, dir: str | Path, **task_config):
+
+        # Which data types will we tackle?
+        for type in task_config.keys():
+            if not type == False:
+                setattr(self, type, True)
+
+        # Store config
+        self.config = task_config
 
         # Set directory
         self.dir = Path(dir) if not isinstance(dir, Path) else dir
 
         # Load data
-        self._import_data(**measure_args)
+        self._import_data()
 
         # Preprocess data
-        self._preprocess_data(**measure_args)
+        self._preprocess_data()
 
     ##################
     # IMPORT METHODS #
     ##################
 
-    # Lump import function
-    def _import_data(
-        self,
-        heart: bool = True,
-        events: bool = True,
-        subjective: bool = True,
-        eye: bool = True,
-        **kwargs,
-    ):
+    def _import_data(self):
 
-        if heart:
+        if self.heart:
             log('Importing RR data.')
             self._import_heart()
-        if events:
+
+        if self.events:
             log('Importing event data.')
             self._import_events()
-        if subjective:
+
+        if self.subjective:
             log('Importing subjective data.')
             self._import_subjective()
-        if eye:
+
+        if self.eye:
             log('Importing eye tracking data.')
             self._import_eye()
-        if eye or heart:
-            self._add_condition_labels(eye=eye, heart=heart)
+
+        if self.eye or self.heart:
+            self._add_condition_labels(eye=self.eye, heart=self.heart)
 
     def _import_heart(self):
-        self.heart = import_data_frame(path=self.dir / 'raw-heart.csv')
+        self.heart_data = import_data_frame(path=self.dir / 'raw-heart.csv')
 
     def _import_eye(self):
-        self.eye = import_data_frame(path=self.dir / 'eye.csv')
-        self.eye = self.eye.filter(
+        self.eye_data = import_data_frame(path=self.dir / 'eye.csv')
+        self.eye_data = self.eye_data.filter(
             items=[
                 'timestamp',
                 'time',
@@ -90,10 +94,9 @@ class CalibrainTask:
                 'verbose.right.gazedirectionnormalized.y',
                 'verbose.right.gazedirectionnormalized.z',
                 'verbose.right.pupildiametermm',
-                'gaze_object',
             ]
         )
-        self.eye.columns = (
+        self.eye_data.columns = (
             'timestamp',
             'time',
             'left_openness',
@@ -106,14 +109,13 @@ class CalibrainTask:
             'right_gaze_direction_y',
             'right_gaze_direction_z',
             'right_pupil_size',
-            'gaze_object'
         )
 
     def _import_events(self):
 
         # Read and format data
-        self.events = import_data_frame(path=self.dir / 'events.csv')
-        self.events.replace(
+        self.events_data = import_data_frame(path=self.dir / 'events.csv')
+        self.events_data.replace(
             to_replace={
                 'New subfolder: MRT': 'task_start',
                 'New subfolder: CLT': 'task_start',
@@ -143,13 +145,15 @@ class CalibrainTask:
             'hard',
             'hard_q',
         ]
-        self.events = self.events.loc[self.events.event.isin(allowed)]
+        self.events_data = self.events_data.loc[
+            self.events_data.event.isin(allowed)
+        ]
 
     def _import_subjective(self):
-        self.subjective = import_data_frame(
+        self.subjective_data = import_data_frame(
             path=self.dir / 'questionnaire.csv'
         )
-        self.subjective['nasa_score'] = self.subjective[
+        self.subjective_data['nasa_score'] = self.subjective_data[
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
 
@@ -163,7 +167,7 @@ class CalibrainTask:
             return
 
         # Get timestamps to make bins
-        bins = self.events.timestamp
+        bins = self.events_data.timestamp
         labels = [
             np.nan,
             'baseline',
@@ -180,8 +184,8 @@ class CalibrainTask:
             log('Labeling eye data.')
 
             # Add labels
-            self.eye['event'] = pd.cut(
-                self.eye.timestamp,
+            self.events_data['event'] = pd.cut(
+                self.events_data.timestamp,
                 bins=bins,
                 right=False,
                 labels=labels,
@@ -191,34 +195,30 @@ class CalibrainTask:
         if heart:
             log('Labeling RR data.')
             # Add labels
-            self.heart['event'] = pd.cut(
-                self.heart.timestamp,
+            self.heart_data['event'] = pd.cut(
+                self.heart_data.timestamp,
                 bins=bins,
                 right=False,
                 labels=labels,
                 ordered=False,
             )
             # Lose some weight
-            self.heart.drop(labels=['timestamp', 'time'], axis=1, inplace=True)
+            self.heart_data.drop(
+                labels=['timestamp', 'time'], axis=1, inplace=True
+            )
 
-    def _preprocess_data(
-        self,
-        heart: bool = True,
-        subjective: bool = True,
-        eye: bool = True,
-        **kwargs,
-    ):
+    def _preprocess_data(self):
 
-        if heart:
+        if self.heart:
             pass   # TODO
 
-        if eye:
+        if self.eye:
             log('Preprocessing eye tracking data.')
             self._preprocess_eye()
 
     def _preprocess_eye(self):
 
-        eye_pipeline(data=self.eye, show_plots=True)
+        eye_pipeline(data=self.eye_data, **self.config['eye']['preprocessing'])
 
 
 class CalibrainCLT(CalibrainTask):
@@ -226,10 +226,11 @@ class CalibrainCLT(CalibrainTask):
     Cognitive Load Task
     """
 
-    def __init__(self, dir: str | Path, **measure_args):
+    def __init__(self, dir: str | Path, **task_config):
         # Initialize and import requested data
-        log('Initializing CLT.', color='red', title=True)
-        super().__init__(dir=dir)
+        as_title = True if hlp.VERBOSITY > 1 else False
+        log('Initializing CLT.', color='red', verbosity=1, title=as_title)
+        super().__init__(dir=dir, **task_config)
         self._import_performance()
 
     # Import performance data
@@ -245,14 +246,15 @@ class CalibrainMRT(CalibrainTask):
     Mental Rotation Task
     """
 
-    def __init__(self, dir: str | Path, **measure_args):
+    def __init__(self, dir: str | Path, **task_config):
         # Initialize and import requested data
-        log('Initializing MRT.', color='red', title=True)
-        super().__init__(dir=dir, **measure_args)
+        as_title = True if hlp.VERBOSITY > 1 else False
+        log('Initializing MRT.', color='red', verbosity=1, title=as_title)
+        super().__init__(dir=dir, **task_config)
         self._import_performance()
         self._add_trial_info_performance()
         self._get_trial_epochs()
-        self._add_trial_labels(eye=True)
+        self._add_trial_labels()
 
     # Import performance data
     def _import_performance(self):
@@ -263,7 +265,7 @@ class CalibrainMRT(CalibrainTask):
 
     def _add_trial_info_performance(self):
         """
-        For the MRT, there are analysis on trial-level. Therefore, we have to label the data first.
+        For the MRT, there are analysis on_col trial-level. Therefore, we have to label the data first.
         We do this using the performance data.
         """
         self.performance['trial'] = (
@@ -289,7 +291,7 @@ class CalibrainMRT(CalibrainTask):
         self.trial_bounds = self.trial_bounds.filter(
             ['condition', 'trial_id', 'timestamp_start', 'timestamp_end']
         )
-        # Convert from wide to long to create bins later on
+        # Convert from wide to long to create bins later on_col
         self.trial_bounds = pd.wide_to_long(
             self.trial_bounds,
             stubnames='timestamp',
@@ -300,14 +302,10 @@ class CalibrainMRT(CalibrainTask):
         )
         self.trial_bounds.reset_index(inplace=True)
 
-    def _add_trial_labels(self, eye: bool = False, heart:bool = False):
+    def _add_trial_labels(self):
         """
         Note: only to be executed AFTER _add_trial_info_performance and _get_trial_epochs
         """
-
-        # We can skip the whole method if no measurement is selected
-        if not (eye or heart):
-            return
 
         # Get timestamps to make bins
         bins = self.trial_bounds.timestamp
@@ -324,11 +322,11 @@ class CalibrainMRT(CalibrainTask):
 
         labels = insert_between_elements(labels, np.nan)
 
-        if eye:
+        if self.eye:
             log('Labeling eye data (trials).')
             # Add labels
-            self.eye['trial'] = pd.cut(
-                self.eye.timestamp,
+            self.eye_data['trial'] = pd.cut(
+                self.eye_data.timestamp,
                 bins=bins,
                 right=False,
                 labels=labels,
@@ -342,19 +340,21 @@ class CalibrainData:
         dir: str | Path,
         **task_params,
     ):
+
         super().__init__()
 
         # Check and set directory
-        self.dir = Path(dir)
+        self.dir = Path(dir) if not isinstance(dir, Path) else dir
         self._check_valid_dir()
+        log(f'Processing Calibrain data: user {self.dir.stem}', verbosity=1)
 
         # Define valid tasks
         self.__valid_tasks = ('clt', 'mrt')
 
         # Set some default behavior
         task_params = {} if task_params is None else task_params
-        task_params.setdefault('mrt', {})
-        task_params.setdefault('clt', {})
+        task_params.setdefault('mrt', False)
+        task_params.setdefault('clt', False)
 
         # Import data
         self._import_data(**task_params)
@@ -417,9 +417,16 @@ class CalibrainData:
 
 
 if __name__ == '__main__':
-    hi('Test!')
 
-    path_to_data = '../data/7_202205091017'
-    data = CalibrainData(
-        dir=path_to_data, mrt={'heart': False, 'events': True}, clt={}
-    )
+    # Let's go
+    hlp.hi('Test!', verbosity=3)
+
+    # Load config
+    with open('../configs/test.toml') as config_file:
+        config = toml.load(config_file)
+
+    # Temp
+    # config.pop('mrt')
+
+    path_to_data = '../data/9_202205091458'
+    data = CalibrainData(dir=path_to_data, **config)

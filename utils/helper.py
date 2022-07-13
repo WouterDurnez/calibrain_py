@@ -42,7 +42,7 @@ def hi(title=None, **params):
     if title:
         log(title, title=True, color='blue')
 
-    # Set params on request
+    # Set params on_col request
     if params:
         set_params(**params)
 
