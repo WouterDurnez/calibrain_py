@@ -1,0 +1,80 @@
+#   ___      _ _ _             _
+#  / __|__ _| (_) |__ _ _ __ _(_)_ _
+# | (__/ _` | | | '_ \ '_/ _` | | ' \
+# \___\__,_|_|_|_.__/_| \__,_|_|_||_|
+
+# TEST CONFIG
+
+########################
+# MENTAL ROTATION TASK #
+########################
+
+[mrt]
+
+heart = true                        # Heart data params (if true, use default)
+events = true                       # Event data params (if true, use default)
+performance = true                  # Performance data params (if true, use default)
+subjective = true                   # Subjective data params (if true, use default)
+
+# Eye tracking data
+[mrt.eye]
+
+    # Preprocessing steps
+    [mrt.eye.preprocessing]
+    time_col = "timestamp"
+    pupil_col = "left_pupil_size"
+
+      [mrt.eye.preprocessing.remove_edge_artifacts_params]
+      min_ms = 75
+      buffer_ms = 50
+      show_plot = false
+
+      [mrt.eye.preprocessing.remove_outliers_params]
+      on_col = "velocity"
+      n = 3
+      show_plot = false
+
+    # Feature calculation steps
+    [mrt.eye.feature_calculation]
+
+        [mrt.eye.feature_calculation.dummy_feature]
+        par1 = 1
+        par2 = true
+
+################################
+# COGNITIVE LOAD TASK (n-back) #
+################################
+
+[clt]
+
+heart = true                        # Heart data params (if true, use default)
+events = true                       # Event data params (if true, use default)
+performance = true                  # Performance data params (if true, use default)
+subjective = true                   # Subjective data params (if true, use default)
+
+# Eye tracking data
+[clt.eye]
+
+    # Preprocessing steps
+    [clt.eye.preprocessing]
+    time_col = "timestamp"
+    pupil_col = "left_pupil_size"
+
+      [clt.eye.preprocessing.remove_edge_artifacts_params]
+      min_ms = 75
+      buffer_ms = 50
+      show_plot = false
+
+      [clt.eye.preprocessing.remove_outliers_params]
+      on_col = "velocity"
+      n = 3
+      show_plot = false
+
+    # Feature calculation steps
+    [clt.eye.feature_calculation]
+
+        [clt.eye.feature_calculation.dummy_feature]
+        par1 = 1
+        par2 = true
+
+

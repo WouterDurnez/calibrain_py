@@ -1,19 +1,26 @@
 """
 Pupil size preprocessing functions
 """
+
 import numpy as np
 import pandas as pd
+import plotly.express as px
+import yaml
 from tqdm import tqdm
 
+import utils.helper as hlp
 from utils.helper import log, import_data_frame
 
 pd.options.plotting.backend = 'plotly'
-import plotly.express as px
-import plotly.graph_objects as go
+
+
+class EyePreprocessing:
+    def __init__(self):
+        pass
 
 
 def clean_missing_data(
-    data: pd.Series, to_replace: list | float = -1, value=np.nan
+        data: pd.Series, to_replace: list | float = -1, value=np.nan
 ):
     """
     Set missing values as NaN rather than some integer
@@ -32,7 +39,7 @@ def clean_missing_data(
 
 
 def calculate_gaze_velocity(
-    time_series: pd.Series, pupil_series: pd.Series, shift=1
+        time_series: pd.Series, pupil_series: pd.Series, shift=1
 ) -> pd.Series:
     """
     Calculate a vector (pd.Series) containing velocity
@@ -62,16 +69,17 @@ def calculate_gaze_velocity(
 
 
 def remove_outliers_mad(
-    data: pd.DataFrame,
-    on: str = 'velocity',
-    pupil_col: str = 'left_pupil_size',
-    n: int = 3,
-    show_plot: bool = False,
+        data: pd.DataFrame,
+        on_col: str = 'velocity',
+        pupil_col: str = 'left_pupil_size',
+        n: int = 3,
+        show_plot: bool = False,
 ):
     """
     Remove outliers based on mean absolute deviation
     :param data: data frame to filter
-    :param on: column on which to apply the criterion
+    :param pupil_col: column containing pupil dilation data
+    :param on_col: column on which to apply the criterion
     :param n: threshold factor
     :param show_plot: visualize cut-off
     :return: None (inplace)
@@ -82,12 +90,11 @@ def remove_outliers_mad(
     n_missing_before = data.left_pupil_size.isna().sum()
 
     # Median absolute deviation
-    median = data[on].median()
-    mad = (np.abs(data[on] - median)).median()
+    median = data[on_col].median()
+    mad = (np.abs(data[on_col] - median)).median()
 
     # Visualize if requested
     if show_plot:
-
         fig = px.line(
             data,
             x='timestamp',
@@ -104,7 +111,7 @@ def remove_outliers_mad(
         fig.show()
 
     # Filter
-    bool_series = data[on] > median + n * mad
+    bool_series = data[on_col] > median + n * mad
     data.loc[bool_series, pupil_col] = np.nan
 
     # New number of data points
@@ -115,26 +122,28 @@ def remove_outliers_mad(
     )
 
     log(
-        f"Removed outliers based on '{on}' column: {n_before - n_missing_before} -> {n_before - n_missing_after} data points ({percentage_reduction}% less)."
+        f'Outliers removed: {n_before - n_missing_before} -> {n_before - n_missing_after}'
+        f' data points ({percentage_reduction}% less).'
     )
 
 
 def remove_edge_artifacts(
-    data: pd.DataFrame,
-    time_col: str = 'timestamp',
-    pupil_col: str = 'left_pupil_size',
-    min_ms: int = 75,
-    buffer_ms: int = 50,
-    show_plot: bool = False,
+        data: pd.DataFrame,
+        time_col: str = 'timestamp',
+        pupil_col: str = 'left_pupil_size',
+        min_ms: int = 75,
+        buffer_ms: int = 50,
+        show_plot: bool = False,
 ) -> list:
     """
-    Find gaps in `pupil_col` based on `missing_val`, and return those
+    Find gaps in `pupil_col` based on_col `missing_val`, and return those
      that meet a minimum criterion (i.e., must be at least `min_ms` long)
     :param data: data frame containing our samples
     :param time_col: column containing timestamps (unix epoch!)
     :param pupil_col: column containing pupil dilation values
     :param min_ms: threshold for gap detection
     :param buffer_ms: extra time buffer to remove around gaps
+    :param show_plot: visualize the results
     :return: data frame with extra column of 'remove' flags, list of tuples (gap start, gap stop, gap duration)
     """
 
@@ -161,7 +170,12 @@ def remove_edge_artifacts(
         )
 
     # Go over timestamps and missings
-    for t, m in tqdm(zip(time, missing), total=len(time)):
+    iterator = (
+        tqdm(zip(time, missing), desc='Processing gaps', total=len(time))
+        if hlp.VERBOSITY > 1
+        else zip(time, missing)
+    )
+    for t, m in iterator:
 
         # If not missing...
         if m == 0:
@@ -215,18 +229,17 @@ def remove_edge_artifacts(
 
 
 def pipeline(
-    data: pd.DataFrame,
-    time_col: str = 'timestamp',
-    pupil_col: str = 'left_pupil_size',
-    outliers: bool = True,
-    edge_artifacts: bool = True,
-    show_plots: bool = False,
+        data: pd.DataFrame,
+        time_col: str = 'timestamp',
+        pupil_col: str = 'left_pupil_size',
+        remove_outliers_params: bool | dict = True,
+        remove_edge_artifacts_params: bool | dict = True,
 ):
     assert (
-        data[time_col].dtype == 'float'
+            data[time_col].dtype == 'float'
     ), f"Need unix epoch timestamps in time column '{time_col}'"
     assert (
-        pupil_col in data.columns
+            pupil_col in data.columns
     ), f"Could not find pupil size column '{pupil_col}' in data frame."
 
     # Get rid of integer values representing missingness
@@ -234,39 +247,79 @@ def pipeline(
     clean_missing_data(data.left_pupil_size)
 
     # Add velocity column
-    log('Adding velocity column.')
-    data['velocity'] = calculate_gaze_velocity(
-        time_series=data[time_col], pupil_series=data[pupil_col]
-    )
+    if 'velocity' not in data:
+        log('Adding velocity column.')
+        data['velocity'] = calculate_gaze_velocity(
+            time_series=data[time_col], pupil_series=data[pupil_col]
+        )
 
-    # Clean data based on outlier criterion
-    if outliers:
+    # Clean data based on_col outlier criterion
+    if remove_outliers_params:
         log('Removing outliers based on MAD.')
-        remove_outliers_mad(data=data, show_plot=show_plots)
+
+        # Must be dict or bool
+        assert isinstance(
+            remove_outliers_params, (bool, dict)
+        ), 'Please pass a boolean or a dictionary with method parameters to the `remove_outliers_params` method!'
+
+        # If bool, make dict
+        if remove_outliers_params is True:
+            remove_outliers_params = {}
+
+        # Only velocity is implemented
+        if 'on_col' in remove_outliers_params.keys():
+            assert (
+                    remove_outliers_params['on_col'] == 'velocity'
+            ), 'Currently, outlier removal only works with velocity. Set `on_col` column to `velocity`.'
+
+        # Set default parameters
+        remove_outliers_params.setdefault('on_col', 'velocity')
+        remove_outliers_params.setdefault('n', 3)
+        remove_outliers_params.setdefault('show_plot', False)
+
+        # Execute method
+        remove_outliers_mad(
+            data=data, pupil_col=pupil_col, **remove_outliers_params
+        )
 
     # Get rid of edge artifacts
     gaps = None
-    if edge_artifacts:
+    if remove_edge_artifacts_params:
         log('Removing edge artifacts.')
+
+        # Must be dict or bool
+        assert isinstance(
+            remove_edge_artifacts_params, (bool, dict)
+        ), 'Please pass a boolean or a dictionary with method parameters to the `remove_outliers_params` method!'
+
+        # If bool, make dict
+        if remove_edge_artifacts_params is True:
+            remove_edge_artifacts_params = {}
+
+        # Set default parameters
+        remove_edge_artifacts_params.setdefault('min_ms', 75)
+        remove_edge_artifacts_params.setdefault('buffer_ms', 50)
+        remove_edge_artifacts_params.setdefault('show_plot', False)
+
+        # Execute method
         gaps = remove_edge_artifacts(
             data=data,
             time_col=time_col,
             pupil_col=pupil_col,
-            show_plot=show_plots,
+            **remove_edge_artifacts_params,
         )
 
     # Set timestamp as index
-    #data.set_index('timestamp', inplace=True)
+    # data.set_index('timestamp', inplace=True)
 
     return gaps
 
 
 if __name__ == '__main__':
-
     print('Test area!')
 
     # Prep data
-    data = import_data_frame(path='../data/8_202205091310/MRT/eye.csv')
+    data = import_data_frame(path='../data/7_202205091017/MRT/eye.csv')
     data = data.filter(
         items=[
             'timestamp',
@@ -300,12 +353,15 @@ if __name__ == '__main__':
         'gaze_object',
     )
 
-    # Try pipeline
-    gaps = pipeline(
-        data=data, outliers=True, edge_artifacts=False, show_plots=True
-    )
+    # Load config
+    with open('../configs/test.yaml') as yaml_file:
+        config = yaml.load(yaml_file, Loader=yaml.Loader)
+    eye_preprocessing_params = config['mrt']['eye']['preprocessing']
 
-    fig = data.left_pupil_size.plot()
+    # Try pipeline
+    gaps = pipeline(data=data, **eye_preprocessing_params)
+
+    """fig = data.left_pupil_size.plot()
     data.set_index('timestamp', inplace=True)
     for args in (
         {'method': 'cubic'},
@@ -324,4 +380,4 @@ if __name__ == '__main__':
                 opacity=0.3,
             )
         )
-    fig.show()
+    fig.show()"""
