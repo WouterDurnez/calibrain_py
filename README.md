@@ -6,6 +6,8 @@
 
 > Processing pipelines for the `CaliBrain` application.
 
+  
+
 [Calibrain](https://research.ugent.be/web/result/project/55786d7f-bf61-11ea-8c04-77b709f2f7d3/details/nl
 ) is a VR application designed to obtain individual physiophysiology profiles, and to benchmark individual responsiveness on biometric markers. **CaliBrain** uses creative spins on traditional psychological measurement paradigms, and was created through the combined expertise of imec-mict-UGent and Howest's Hitlab.
 
@@ -15,6 +17,7 @@ This repository contains scripts and classes that help process output generated 
 * Performance data
 * Eye-tracking data
 * Heart data (RR intervals)
+* Subjective data (questionnaires)
 
 All settings are gathered in a [config file](configs/test.toml) to facilitate on the fly changes to the global pipeline.
 
@@ -32,11 +35,11 @@ path_to_data = '../data/9_202205091458'
 data = CalibrainData(dir=path_to_data, **config)
 ```
 
-Initializing a data object in this manner will immediately set off all the preprocessing and feature calculating, as specified in the config file. If no such file is found, defaults settings will be used (preprocessing every data stream with default parameters and calculating all features).
+Initializing a data object in this manner will immediately set off all the preprocessing and feature calculation, as specified in the config file. If no such file is found, defaults settings will be used (preprocessing every data stream and calculating all features with default parameters).
 
 # Under the hood
 
-## CaliBrain data classes
+## CaliBrain data containers
 
 The `CalibrainData` class automatically generates some general attributes, such as:
 
@@ -52,7 +55,7 @@ Currently, **CaliBrain** contains 2 tasks:
 1. a *cognitive load task* or **CLT** (the n-back task) to measure working memory capacity
 2. a *mental rotation task* or **MRT** to measure spatial reasoning capacity
 
-These tasks are supported by the `CalibrainCLT` and `CalibrainMRT` subclasses to the parent `CalibrainTask`, respectively. Unless specified otherwise, they are both included as attributes in `CalibrainData` objects.
+These tasks are supported by the `CalibrainCLT` and `CalibrainMRT` subclasses to the parent `CalibrainTask`, respectively. Each class also contains additional functionality that is specific to the task. Unless specified otherwise, the MRT and CLT tasks are both included as attributes in `CalibrainData` objects.
 
 ```python
 >>> data = CalibrainData(dir=path_to_data) 
@@ -69,7 +72,7 @@ Now you can access individual tasks as follows:
 ```python
 >>> data.clt
 Calibrain CLT object containing:
-	-Eye data:			True
+	-Eye data:		True
 	-Heart data:		True
 	-Event data:		True
 	-Subjective data:	True
@@ -83,7 +86,7 @@ Calibrain CLT object containing:
 [5 rows x 13 columns]```
 ```
 
-## Data (pre)processing
+## CaliBrain data (pre)processing
 
 
 
