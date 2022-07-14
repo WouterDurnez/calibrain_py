@@ -28,7 +28,7 @@ When an individual goes through our **CaliBrain** experience, output is stored t
 ```python
 # Load config
 with open('../configs/test.toml') as config_file:
-    config = toml.load(config_file)
+    config = toml.load_data(config_file)
 
 # Point to data folder
 path_to_data = '../data/9_202205091458'
