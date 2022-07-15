@@ -4,232 +4,129 @@
 | (__/ _` | | | '_ \ '_/ _` | | ' \
  \___\__,_|_|_|_.__/_| \__,_|_|_||_|
 
-- Coded by Wouter Durnez & Jonas De Bruyne
+- Coded on_col Wouter Durnez & Jonas De Bruyne
 """
 
 import numpy as np
 import pandas as pd
 
-# from calibrain import calibrain
-
-from utils.helper import log
+from utils.helper import log, import_data_frame
 
 
-def calculate_performance_CLT(data: pd.DataFrame):
-    '''
-    Calculates performance features and returns dataframe containing the features
-    :param data: pd.DataFrame containing performance data of CLT; CalibrainData.clt.performance
-    :return: pd.DataFrame containing features of subject's performance
-    '''
+def drop_first_trials(data_chunk: pd.DataFrame, n: int = None) -> pd.DataFrame:
 
-    log("Calculating performance features.")
+    # Number of rows to drop
+    n_rows = n if n else  int(data_chunk.iloc[0].condition + 1) # N (in N-back) + 1
 
-    # copy so we don't change original data
-    data_new = data.copy()
-
-    def delete_firsts(data_new: pd.DataFrame):
-        '''
-        Delete first trials of each block
-        Block 1: 2 trials;
-        Block 2: 3 trials;
-        Block 3: 4 trials
-        '''
-
-        def mask_first_ntrials(df, n: int):
-            result = np.ones_like(df)
-            result[0:n] = 0
-            return result
-
-        for condition in range(1,4):
-            mask = (
-                data_new.loc[data_new.condition == condition]
-                    .groupby('condition')['condition']
-                    .transform(lambda x: mask_first_ntrials(x, condition+1))
-                    .astype(bool)
-            )
-            data_new.loc[data_new.condition == condition] = data_new.loc[data_new.condition == condition].loc[mask]
-
-    def calculate_accuracy(data_new: pd.DataFrame):
-        wrong_count = (
-            data_new.loc[data_new.accuracy == -1]
-                .groupby('condition', as_index=False)
-                .accuracy.count()
-        )
-
-        correct_count = (
-            data_new.loc[data_new.accuracy == 1]
-                .groupby('condition', as_index=False)
-                .accuracy.count()
-        )
-
-        dropped_count = (
-            data_new.loc[data_new.accuracy == 0]
-                .groupby('condition', as_index=False)
-                .accuracy.count()
-        )
-
-        total_count = (
-            data_new.groupby('condition', as_index=False)
-                .accuracy.count()
-        )
-
-        wrong_count.rename(columns={'accuracy': 'wrong_count'}, inplace=True)
-        correct_count.rename(columns={'accuracy': 'correct_count'}, inplace=True)
-        dropped_count.rename(columns={'accuracy': 'dropped_count'}, inplace=True)
-        total_count.rename(columns={'accuracy': 'total_count'}, inplace=True)
-
-        return wrong_count, correct_count, dropped_count, total_count
-
-    def get_performance_matrix(wrong_count, correct_count, dropped_count, total_count):
-        performance_matrix = pd.merge(correct_count, wrong_count, how='outer')
-        performance_matrix = pd.merge(performance_matrix, dropped_count, how='outer')
-        performance_matrix = pd.merge(performance_matrix, total_count, how='outer')
-
-        # performance_matrix = pd.concat([correct_count, wrong_count, dropped_count, total_count], axis=1)
-
-        # Replace nan values with zeros
-        performance_matrix.fillna(0, inplace=True)
-
-        # Calculate percentage correct, wrong and dropped
-        performance_matrix['correct_prop'] = (
-                performance_matrix['correct_count'] / performance_matrix['total_count']
-        )
-        performance_matrix['wrong_prop'] = (
-                performance_matrix['wrong_count'] / performance_matrix['total_count']
-        )
-        performance_matrix['dropped_prop'] = (
-                performance_matrix['dropped_count'] / performance_matrix['total_count']
-        )
-
-        # delete condition 0 and NaN
-        to_be_deleted = performance_matrix.loc[
-            (performance_matrix['condition'] == 0)
-            | (performance_matrix['condition'] == np.nan)
-            ]
-        to_be_deleted_rows_indices = list(to_be_deleted.index)
-        performance_matrix.drop(to_be_deleted_rows_indices, axis=0, inplace=True)
-
-        return performance_matrix
-
-    delete_firsts(data_new)
-    wrong_count, correct_count, dropped_count, total_count = calculate_accuracy(data_new)
-    performance_matrix = get_performance_matrix(wrong_count, correct_count, dropped_count, total_count)
-
-    return performance_matrix
+    # Set accuracy to 'drop' (0)
+    data_chunk.loc[data_chunk.index[:n_rows], 'accuracy'] = np.nan
+    return data_chunk
 
 
-def calculate_performance_MRT(data: pd.DataFrame):
+def filter_by_mad(data: pd.DataFrame, on_col: str= "reaction_time", n:int =3):
 
-    log("Calculating performance features.")
+    # Original number of data points
+    n_before = len(data)
+    n_missing_before = data[on_col].isna().sum()
 
-    # copy so we don't change original data
-    data_new = data.copy()
+    # Median absolute deviation
+    median = data[on_col].median()
+    mad = data[on_col].mad()  # (np.abs(self.data[on_col] - median)).median()
 
-    def mask_first_trial(df):
-        result = np.ones_like(df)
-        result[0] = 0
-        return result
+    # Filter
+    bool_series = data[on_col] > median + n * mad
+    data.loc[bool_series, on_col] = np.nan
 
-    def calculate_accuracy(data_new: pd.DataFrame):
-        total_count = df_perf_MRT.groupby('condition', as_index=False).accuracy.count()
-        wrong_count = (
-            data_new.loc[data_new.accuracy == 0]
-                .groupby('condition', as_index=False)
-                .accuracy.count()
-        )
-        correct_count = (
-            data_new.loc[data_new.accuracy == 1]
-                .groupby('condition', as_index=False)
-                .accuracy.count()
-        )
-
-        wrong_count.rename(columns={'accuracy': 'wrong_count'}, inplace=True)
-        correct_count.rename(columns={'accuracy': 'correct_count'}, inplace=True)
-        total_count.rename(columns={'accuracy': 'total_count'}, inplace=True)
-
-        return wrong_count, correct_count, total_count
-
-    def clean_rt_data(data_new: pd.DataFrame):
-
-        # delete unusually fast responses (< 500 ms)
-        threshold = 0.5
-        data_new['rt_clean'] = data_new['reaction_time'].copy()
-        data_new.loc[data_new['reaction_time'] < threshold, 'rt_clean'] = None
-
-        # delete outliers (> median + 2.5 x SD)
-        Ms = data_new.groupby('condition').rt_clean.median()
-        SDs = data_new.groupby('condition').rt_clean.std()
-        for condition in list(data_new.condition.unique()):
-            data_new.loc[
-                (data_new.rt_clean > Ms[condition] + 2.5 * SDs[condition]), 'rt_clean'
-            ] = None
-
-    def calculate_rt_measures(data_new):
-        # only select correct responses
-        data_new = data_new[data_new['accuracy'] == 1]
-
-        median_rt = data_new.groupby('condition', as_index=False)['rt_clean'].median()
-        median_rt.rename(columns={"rt_clean": "median_rt"}, inplace=True)
-
-        sd_rt = data_new.groupby('condition', as_index=False)['rt_clean'].std()
-        sd_rt.rename(columns={"rt_clean": "sd_rt"}, inplace=True)
-
-        return median_rt, sd_rt
-
-    def get_performance_matrix(wrong_count, correct_count, total_count, median_rt, sd_rt):
-        performance_matrix = pd.merge(correct_count, wrong_count, how='outer')
-        performance_matrix = pd.merge(performance_matrix, total_count, how='outer')
-
-        # Replace nan values with zeros
-        performance_matrix.fillna(0, inplace=True)
-
-        # Calculate percentage correct, wrong and dropped
-        performance_matrix['correct_prop'] = (
-                performance_matrix['correct_count'] / performance_matrix['total_count']
-        )
-        performance_matrix['wrong_prop'] = (
-                performance_matrix['wrong_count'] / performance_matrix['total_count']
-        )
-
-        performance_matrix = pd.merge(performance_matrix, median_rt, how='outer')
-        performance_matrix = pd.merge(performance_matrix, sd_rt, how='outer')
-
-        # delete condition 0 and NaN
-        to_be_deleted = performance_matrix.loc[
-            (performance_matrix['condition'] == 0)
-            | (performance_matrix['condition'] == np.nan)
-            ]
-        to_be_deleted_rows_indeces = list(to_be_deleted.index)
-        performance_matrix.drop(to_be_deleted_rows_indeces, axis=0, inplace=True)
-
-        return performance_matrix
-
-    # delete first trial of each block
-    mask = (
-        data_new.groupby('condition')['condition'].transform(mask_first_trial).astype(bool)
-    )
-    df_perf_MRT = data_new.loc[mask]
-
-    # get accuracy measures
-    wrong_count, correct_count, total_count = calculate_accuracy(data_new)
-
-    # clean rt data
-    clean_rt_data(data_new)
-
-    # get rt measures
-    median_rt, sd_rt = calculate_rt_measures(data_new)
-
-    # get performance matrix
-    performance_matrix = get_performance_matrix(
-        wrong_count, correct_count, total_count, median_rt, sd_rt
+    # New number of data points
+    n_missing_after = data[on_col].isna().sum()
+    new_missing = n_missing_after - n_missing_before
+    percentage_reduction = round(
+        new_missing / (n_before - n_missing_before), 2
     )
 
-    return performance_matrix
+    log(
+        f'Outliers removed: {n_before - n_missing_before} -> {n_before - n_missing_after}'
+        f' data points ({percentage_reduction}% less).'
+    )
+
+
+def build_performance_data_frame(data: pd.DataFrame, task:str) -> pd.DataFrame:
+    """
+    Build performance matrix for a task
+    :param data: performance data frame from Calibrain task
+    :return: performance matrix (data frame)
+    """
+
+    task = task.lower()
+    assert task in ('clt', 'mrt')
+
+    log(f'Calculating performance stats for {task.upper()}.')
+
+    # Drop first trials
+    data = data.groupby('condition').apply(lambda df: drop_first_trials(df, n=(None if task == 'clt' else 1)))
+
+    # Get some counts
+    matrix = data.groupby('condition').accuracy.value_counts()
+    matrix.rename('count', inplace=True)
+    matrix = matrix.reset_index()
+
+    # Label trial accuracy
+    match task:
+        case 'clt':
+            to_replace = {
+                -1: 'incorrect',
+                1: 'correct',
+                0: 'dropped'}
+        case 'mrt':
+            to_replace = {
+                1: 'correct',
+                0: 'incorrect'
+            }
+
+    matrix.accuracy.replace(to_replace, inplace=True)
+    matrix = matrix.pivot(index='condition', columns='accuracy')
+    matrix.columns = matrix.columns.get_level_values(1)
+    matrix.columns.rename('value')
+
+    # Add missing columns (if any) and calculate proportions
+    matrix['total'] = data.groupby('condition').accuracy.count()
+    iterate_over = ['correct','incorrect']
+    if task == 'clt': iterate_over.append('dropped')
+    for col in iterate_over:
+        if col not in matrix: matrix[col] = 0
+        matrix[f'{col}_proportion'] = matrix[col] / matrix.total
+
+    # MRT also contains reaction time
+    if task=='mrt':
+
+        # First filter reaction time for outliers
+        filter_by_mad(data=data, on_col='reaction_time')
+
+        # Helper percentile calculator
+        def percentile(n):
+            def percentile_(x):
+                return np.nanpercentile(x, n)
+
+            percentile_.__name__ = f'percentile_{n}'
+            return percentile_
+
+        # Calculate RT statistics
+        rt_stats = data.groupby('condition').reaction_time.agg([
+            'mean','std','median', 'min', 'max', percentile(5), percentile(50), percentile(95)
+        ])
+        rt_stats.columns = [f'rt_{col}' for col in rt_stats.columns]
+
+        # Append new columns
+        matrix = matrix.join(rt_stats)
+
+    return matrix
 
 
 if __name__ == '__main__':
-    path_to_data = '../data/test_202206021426'
-    # data = calibrain.CalibrainData(dir=path_to_data)
-    #
-    # performance_data = data.clt.performance
-    # test = calculate_performance_CLT(performance_data)
+
+    clt_data = import_data_frame(path='../data/7_202205091017/CLT/performance-clt.csv')
+    mrt_data = import_data_frame(path='../data/7_202205091017/MRT/performance-mrt.csv')
+
+    clt_performance = build_performance_data_frame(data=clt_data, task='clt')
+    mrt_performance = build_performance_data_frame(data=mrt_data, task='mrt')
+
