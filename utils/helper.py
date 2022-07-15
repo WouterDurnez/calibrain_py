@@ -7,10 +7,9 @@ import time
 from pathlib import Path
 from typing import Callable
 
-import numpy as np
 import pandas as pd
-from colorama import Fore, Style
 import pyfiglet
+from colorama import Fore, Style
 
 VERBOSITY = 3
 TIMESTAMPED = True
@@ -18,8 +17,8 @@ TIMESTAMPED = True
 
 # Set parameters
 def set_params(
-        verbosity: int = None,
-        timestamped: bool = None,
+    verbosity: int = None,
+    timestamped: bool = None,
 ):
     global VERBOSITY
     global TIMESTAMPED
@@ -36,7 +35,7 @@ def hi(title=None, **params):
 
     print('\n')
     print(Fore.BLUE, end='')
-    print(pyfiglet.figlet_format("Calibrain", font='small')[:-2])
+    print(pyfiglet.figlet_format('Calibrain', font='small')[:-2])
     print(Style.RESET_ALL)
 
     if title:
@@ -47,10 +46,9 @@ def hi(title=None, **params):
         set_params(**params)
 
 
-
 # Fancy print
 def log(
-        *message, verbosity=3, sep='', timestamped=None, title=False, color=None
+    *message, verbosity=3, sep='', timestamped=None, title=False, color=None
 ):
     """
     Print wrapper that adds timestamp, and can be used to toggle levels of logging info.
@@ -73,7 +71,9 @@ def log(
         'magenta': Fore.MAGENTA,
         'cyan': Fore.CYAN,
     }
-    assert color in color_dict or color is None, 'Please pick a valid color for logging (red, green, blue, yellow, magenta or cyan).'
+    assert (
+        color in color_dict or color is None
+    ), 'Please pick a valid color for logging (red, green, blue, yellow, magenta or cyan).'
     if color and color in color_dict:
         color = color_dict[color]
 
@@ -120,9 +120,7 @@ def time_it(f: Callable):
         res = f(*args, **kwargs)
         t2 = time.time()
 
-        log(
-            f'{f.__name__} took {round(t2 - t1, 3)} seconds to complete.'
-        )
+        log(f'{f.__name__} took {round(t2 - t1, 3)} seconds to complete.')
 
         return res
 
@@ -147,7 +145,7 @@ def set_dir(*dirs):
                 verbosity=1,
             )
         else:
-            log(f"<{dir}> folder accounted for.", verbosity=3)
+            log(f'<{dir}> folder accounted for.', verbosity=3)
 
 
 def clean_col_name(col: str):
@@ -168,7 +166,6 @@ def clean_col_name(col: str):
 
 
 def import_data_frame(path: str | Path, **kwargs):
-
     df = pd.read_csv(filepath_or_buffer=path, **kwargs)
     df.columns = [clean_col_name(col) for col in df.columns]
     if 'timestamp' in df.columns:
@@ -176,7 +173,6 @@ def import_data_frame(path: str | Path, **kwargs):
 
     return df
 
+
 if __name__ == '__main__':
     hi()
-
-
