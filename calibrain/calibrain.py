@@ -20,6 +20,14 @@ from utils.helper import log, hi, import_data_frame
 import utils.helper as hlp
 from eye.preprocessing import EyePreprocessor
 
+from eye.preprocessing import pipeline as eye_pipeline
+from performance.preproc_and_features import (
+    calculate_performance_CLT as CLT_perf_pipeline,
+    calculate_performance_MRT as MRT_perf_pipeline,
+)
+
+tqdm.pandas()
+
 ################
 # Data classes #
 ################
@@ -95,37 +103,68 @@ class CalibrainTask:
         self.heart_data = import_data_frame(path=self.dir / 'raw-heart.csv')
 
     def _import_eye(self):
-        self.eye_data = import_data_frame(path=self.dir / 'eye.csv')
-        self.eye_data = self.eye_data.filter(
-            items=[
-                'timestamp',
-                'time',
-                'verbose.left.eyeopenness',
-                'verbose.left.gazedirectionnormalized.x',
-                'verbose.left.gazedirectionnormalized.y',
-                'verbose.left.gazedirectionnormalized.z',
-                'verbose.left.pupildiametermm',
-                'verbose.right.eyeopenness',
-                'verbose.right.gazedirectionnormalized.x',
-                'verbose.right.gazedirectionnormalized.y',
-                'verbose.right.gazedirectionnormalized.z',
-                'verbose.right.pupildiametermm',
-            ]
-        )
-        self.eye_data.columns = (
-            'timestamp',
-            'time',
-            'left_openness',
-            'left_gaze_direction_x',
-            'left_gaze_direction_y',
-            'left_gaze_direction_z',
-            'left_pupil_size',
-            'right_openness',
-            'right_gaze_direction_x',
-            'right_gaze_direction_y',
-            'right_gaze_direction_z',
-            'right_pupil_size',
-        )
+
+        self.eye = import_data_frame(path=self.dir / 'eye.csv')
+        if 'gaze_object' in self.eye.columns:
+            self.eye = self.eye.filter(
+                items=[
+                    'timestamp','time',
+                    'verbose.left.eyeopenness',
+                    'verbose.left.gazedirectionnormalized.x',
+                    'verbose.left.gazedirectionnormalized.y',
+                    'verbose.left.gazedirectionnormalized.z',
+                    'verbose.left.pupildiametermm',
+                    'verbose.right.eyeopenness',
+                    'verbose.right.gazedirectionnormalized.x',
+                    'verbose.right.gazedirectionnormalized.y',
+                    'verbose.right.gazedirectionnormalized.z',
+                    'verbose.right.pupildiametermm',
+                    'gaze_object',
+                ]
+            )
+            self.eye.columns = (
+                'timestamp','time',
+                'left_openness',
+                'left_gaze_direction_x',
+                'left_gaze_direction_y',
+                'left_gaze_direction_z',
+                'left_pupil_size',
+                'right_openness',
+                'right_gaze_direction_x',
+                'right_gaze_direction_y',
+                'right_gaze_direction_z',
+                'right_pupil_size',
+                'gaze_object',
+            )
+        if 'gaze_object' not in self.eye.columns:
+            self.eye = self.eye.filter(
+                items=[
+                    'timestamp', 'time',
+                    'verbose.left.eyeopenness',
+                    'verbose.left.gazedirectionnormalized.x',
+                    'verbose.left.gazedirectionnormalized.y',
+                    'verbose.left.gazedirectionnormalized.z',
+                    'verbose.left.pupildiametermm',
+                    'verbose.right.eyeopenness',
+                    'verbose.right.gazedirectionnormalized.x',
+                    'verbose.right.gazedirectionnormalized.y',
+                    'verbose.right.gazedirectionnormalized.z',
+                    'verbose.right.pupildiametermm',
+                ]
+            )
+            self.eye.columns = (
+                'timestamp', 'time',
+                'left_openness',
+                'left_gaze_direction_x',
+                'left_gaze_direction_y',
+                'left_gaze_direction_z',
+                'left_pupil_size',
+                'right_openness',
+                'right_gaze_direction_x',
+                'right_gaze_direction_y',
+                'right_gaze_direction_z',
+                'right_pupil_size',
+            )
 
     def _import_events(self):
 
@@ -166,10 +205,10 @@ class CalibrainTask:
         ]
 
     def _import_subjective(self):
-        self.subjective_data = import_data_frame(
-            path=self.dir / 'questionnaire.csv'
-        )
-        self.subjective_data['nasa_score'] = self.subjective_data[
+
+        self.subjective = import_data_frame(path=self.dir / 'questionnaire.csv')
+        self.subjective['pe'] = 10 - self.subjective['pe']
+        self.subjective['nasa_score'] = self.subjective[
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
 
@@ -219,9 +258,8 @@ class CalibrainTask:
                 ordered=False,
             )
             # Lose some weight
-            self.heart_data.drop(
-                labels=['timestamp', 'time'], axis=1, inplace=True
-            )
+
+            self.heart.drop(labels=['time'], axis=1, inplace=True)
 
     def _preprocess_data(self):
 
@@ -229,6 +267,7 @@ class CalibrainTask:
             pass  # TODO
 
         if self.eye:
+
             log('Preprocessing eye tracking data.')
             self.config['eye'].setdefault('preprocessing', {})
             self._preprocess_eye()
@@ -240,6 +279,7 @@ class CalibrainTask:
         eye_preprocessor.load_params(**self.config['eye']['preprocessing'])
         eye_preprocessor.load_data(data=self.eye_data)
         self.eye_data = eye_preprocessor.pipeline(data=self.eye_data)
+
 
     ###############################
     # FEATURE CALCULATION METHODS #
@@ -276,6 +316,7 @@ class CalibrainCLT(CalibrainTask):
         # Initialize and import requested data
         super().__init__(dir=dir, **task_config)
         self._import_performance()
+        self._preprocess_performance()
 
     # Import performance data
     def _import_performance(self):
@@ -283,6 +324,9 @@ class CalibrainCLT(CalibrainTask):
         self.performance_data = import_data_frame(
             path=self.dir / 'performance-clt.csv'
         )
+
+    def _preprocess_performance(self):
+        self.performance_features = CLT_perf_pipeline(data = self.performance)
 
 
 class CalibrainMRT(CalibrainTask):
@@ -294,6 +338,7 @@ class CalibrainMRT(CalibrainTask):
         # Initialize and import requested data
         super().__init__(dir=dir, **task_config)
         self._import_performance()
+        self._preprocess_performance()
         self._add_trial_info_performance()
         self._get_trial_epochs()
         self._add_trial_labels()
@@ -304,6 +349,9 @@ class CalibrainMRT(CalibrainTask):
         self.performance_data = import_data_frame(
             path=self.dir / 'performance-mrt.csv'
         )
+
+    def _preprocess_performance(self):
+        self.performance_features = MRT_perf_pipeline(data = self.performance)
 
     def _add_trial_info_performance(self):
         """
@@ -477,3 +525,4 @@ if __name__ == '__main__':
 
     path_to_data = '../data/9_202205091458'
     data = CalibrainData(dir=path_to_data, **config)
+

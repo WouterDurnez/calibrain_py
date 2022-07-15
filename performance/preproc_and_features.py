@@ -10,7 +10,7 @@
 import numpy as np
 import pandas as pd
 
-from calibrain import calibrain
+# from calibrain import calibrain
 
 from utils.helper import log
 
@@ -22,7 +22,7 @@ def calculate_performance_CLT(data: pd.DataFrame):
     :return: pd.DataFrame containing features of subject's performance
     '''
 
-    log("Calculating performance measures.")
+    log("Calculating performance features.")
 
     # copy so we don't change original data
     data_new = data.copy()
@@ -119,6 +119,9 @@ def calculate_performance_CLT(data: pd.DataFrame):
 
 
 def calculate_performance_MRT(data: pd.DataFrame):
+
+    log("Calculating performance features.")
+
     # copy so we don't change original data
     data_new = data.copy()
 
@@ -147,6 +150,7 @@ def calculate_performance_MRT(data: pd.DataFrame):
         return wrong_count, correct_count, total_count
 
     def clean_rt_data(data_new: pd.DataFrame):
+
         # delete unusually fast responses (< 500 ms)
         threshold = 0.5
         data_new['rt_clean'] = data_new['reaction_time'].copy()
@@ -161,6 +165,9 @@ def calculate_performance_MRT(data: pd.DataFrame):
             ] = None
 
     def calculate_rt_measures(data_new):
+        # only select correct responses
+        data_new = data_new[data_new['accuracy'] == 1]
+
         median_rt = data_new.groupby('condition', as_index=False)['rt_clean'].median()
         median_rt.rename(columns={"rt_clean": "median_rt"}, inplace=True)
 
@@ -221,8 +228,8 @@ def calculate_performance_MRT(data: pd.DataFrame):
 
 
 if __name__ == '__main__':
-    path_to_data = '../../data/test_202206021426'
-    data = calibrain.CalibrainData(dir=path_to_data)
-
-    performance_data = data.clt.performance
-    test = calculate_performance_CLT(performance_data)
+    path_to_data = '../data/test_202206021426'
+    # data = calibrain.CalibrainData(dir=path_to_data)
+    #
+    # performance_data = data.clt.performance
+    # test = calculate_performance_CLT(performance_data)
