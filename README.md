@@ -1,6 +1,6 @@
 <p align="center">
     <a href="#readme">
-        <img alt="CaliBrain_py logo" src="docs/RepoLogo.png" width=65%>
+        <img alt="CaliBrain_py logo" src="docs/RepoLogo2.png" width=65%>
     </a>
 </p>
 
@@ -21,14 +21,14 @@ This repository contains scripts and classes that help process output generated 
 
 All settings are gathered in a [config file](configs/test.toml) to facilitate on the fly changes to the global pipeline.
 
-# How it works
+# How it works 💪
 
 When an individual goes through our **CaliBrain** experience, output is stored to a folder with a specific structure. The `CalibrainData` class is designed to process this folder and all its contents in a single stroke, given the path to the directory and a(n optional) config file.
 
 ```python
 # Load config
 with open('../configs/test.toml') as config_file:
-    config = toml.load_data(config_file)
+    config = toml.load(config_file)
 
 # Point to data folder
 path_to_data = '../data/9_202205091458'
@@ -37,7 +37,7 @@ data = CalibrainData(dir=path_to_data, **config)
 
 Initializing a data object in this manner will immediately set off all the preprocessing and feature calculation, as specified in the config file. If no such file is found, defaults settings will be used (preprocessing every data stream and calculating all features with default parameters).
 
-# Under the hood
+# Under the hood ⚙️
 
 ## CaliBrain data containers
 
@@ -88,8 +88,41 @@ Calibrain CLT object containing:
 
 ## CaliBrain data (pre)processing
 
+`CalibrainData` and its `CalibrainTask` objects dispatch all preprocessing and feature calculation tasks to the appropriate classes. In doing so, we strive for a modular and recyclable approach.
 
+In general, data (e.g., eye tracking data) goes through two steps:
 
+1. Preprocessing
+2. Feature calculation
+
+For instance, **eye tracking data** is handled by two separate classes:
+
+1. `EyePreprocessor`: contains methods to clean data, remove artifacts, remove outliers, etc.
+2. `EyeFeatures`: contains methods to calculate features such as gaze entropy, gaze switches, etc.
+
+> **Note**:
+> All of this functionality is taken care of within the `CalibrainData` classes, so no additional coding should be required.
+
+To illustrate the working of (pre)processing, let's take the `EyePreprocessor` class.
+
+```python
+# Initialize object
+eye_prep = EyePreprocessor()
+# Load data
+eye_prep.load_data(data=eye_data_df)
+# Load parameters for processing
+eye_prep.load_params(**eye_preprocessing_params)
+# Execute
+data = eye_prep.pipeline()
+```
+
+or simply
+
+```python
+data = EyePreprocessor(data=eye_data_df, **eye_preprocessing_params).pipeline()
+```
+
+---
 <p align="left">
 👤 <i>Wouter Durnez, Jonas De Bruyne</i>
 </p>
