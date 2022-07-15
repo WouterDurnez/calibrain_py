@@ -6,7 +6,7 @@ authors = ["Wouter Durnez <wouter.durnez@ugent.com>", "Jonas De Bruyne <jonas.de
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.10, <3.11"
+python = ">=3.10,<3.11"
 pandas = "^1.4.2"
 colorama = "^0.4.4"
 pyfiglet = "^0.8.post1"
@@ -14,8 +14,13 @@ tqdm = "^4.64.0"
 dash = "^2.5.1"
 dash-bootstrap-components = "^1.1.0"
 plotly = "^5.8.0"
-matplotlib = "^3.5.2"
+numpy = "^1.23.0"
+scipy = "^1.8.1"
 seaborn = "^0.11.2"
+PyYAML = "^6.0"
+toml = "^0.10.2"
+matplotlib = "^3.5.2"
+
 
 [tool.poetry.dev-dependencies]
 
