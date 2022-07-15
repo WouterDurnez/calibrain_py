@@ -2,13 +2,14 @@
 Pupil size preprocessing functions
 """
 
+from types import SimpleNamespace
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import toml
-import yaml
 from tqdm import tqdm
-from types import SimpleNamespace
+
 import utils.helper as hlp
 from utils.helper import log, import_data_frame
 
@@ -19,6 +20,7 @@ class EyePreprocessor:
     def __init__(self, data: pd.DataFrame = None, **params):
 
         # Load params
+        self.data = None
         self.pupil_col = 'left_pupil_size'
         self.time_col = 'timestamp'
         self.load_params(**params)
@@ -35,13 +37,13 @@ class EyePreprocessor:
 
         # Run some checks
         assert (
-                self.pupil_col in self.data
+            self.pupil_col in self.data
         ), f"Could not find pupil size column '{self.pupil_col}' in data frame."
         assert (
-                self.time_col in self.data
+            self.time_col in self.data
         ), f"Could not find time column '{self.time_col}' in data frame."
         assert (
-                self.data[self.time_col].dtype == 'float'
+            self.data[self.time_col].dtype == 'float'
         ), f"Need unix epoch timestamps in time column '{self.time_col}'"
 
     def load_params(self, **params):
@@ -67,7 +69,8 @@ class EyePreprocessor:
         :param value: what value to replace the unwanted elements with
         """
 
-        if value == 'NaN': value = np.nan
+        if value == 'NaN':
+            value = np.nan
 
         to_replace = (
             [to_replace] if not isinstance(to_replace, list) else to_replace
@@ -137,7 +140,7 @@ class EyePreprocessor:
 
         # Median absolute deviation
         median = self.data[on_col].median()
-        mad = (np.abs(self.data[on_col] - median)).median()
+        mad = self.data[on_col].mad() #(np.abs(self.data[on_col] - median)).median()
 
         # Visualize if requested
         if show_plot:
@@ -280,7 +283,9 @@ class EyePreprocessor:
         if data is not None:
             self.load_data(data=data)
 
-        assert hasattr(self, 'data') and self.data is not None, 'Need to load data first! Either load data with the `load` method, or pass a `data` argument to the pipeline function.'
+        assert (
+            hasattr(self, 'data') and self.data is not None
+        ), 'Need to load data first! Either load data with the `load` method, or pass a `data` argument to the pipeline function.'
 
         # Line up arguments
         clean_missing_data_params = self.params.clean_missing_data_params
@@ -301,9 +306,7 @@ class EyePreprocessor:
                 clean_missing_data_params = {}
 
             log('Cleaning missing data.')
-            self.clean_missing_data(
-                **clean_missing_data_params
-            )
+            self.clean_missing_data(**clean_missing_data_params)
 
         # Add velocity column
         if 'velocity' not in self.data or add_velocity_params:
@@ -420,8 +423,9 @@ if __name__ == '__main__':
     eye_preprocessing_params = config['mrt']['eye']['preprocessing']
 
     # Try pipeline
-    eye_preprocessor = EyePreprocessor(data=data, **eye_preprocessing_params)
-    data = eye_preprocessor.pipeline()
+    preprocessed_data = EyePreprocessor(
+        data=data, **eye_preprocessing_params
+    ).pipeline()
 
     """fig = data.left_pupil_size.plot()
     data.set_index('timestamp', inplace=True)
