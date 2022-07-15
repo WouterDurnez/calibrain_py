@@ -24,6 +24,13 @@ subjective = true                   # Subjective data params (if true, use defau
     time_col = "timestamp"
     pupil_col = "left_pupil_size"
 
+      [mrt.eye.preprocessing.add_velocity_params]
+      shift = 1
+
+      [mrt.eye.preprocessing.clean_missing_data_params]
+      to_replace = -1
+      value = "NaN"
+
       [mrt.eye.preprocessing.remove_edge_artifacts_params]
       min_ms = 75
       buffer_ms = 50
@@ -46,7 +53,6 @@ subjective = true                   # Subjective data params (if true, use defau
 ################################
 
 [clt]
-
 heart = true                        # Heart data params (if true, use default)
 events = true                       # Event data params (if true, use default)
 performance = true                  # Performance data params (if true, use default)
@@ -59,6 +65,13 @@ subjective = true                   # Subjective data params (if true, use defau
     [clt.eye.preprocessing]
     time_col = "timestamp"
     pupil_col = "left_pupil_size"
+
+      [clt.eye.preprocessing.add_velocity_params]
+      shift = 1
+
+      [clt.eye.preprocessing.clean_missing_data_params]
+      to_replace = -1
+      value = "NaN"
 
       [clt.eye.preprocessing.remove_edge_artifacts_params]
       min_ms = 75
