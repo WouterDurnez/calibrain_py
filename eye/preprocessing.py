@@ -172,7 +172,7 @@ class EyePreprocessor:
 
         log(
             f'Outliers removed: {n_before - n_missing_before} -> {n_before - n_missing_after}'
-            f' data points ({percentage_reduction}% less).'
+            f' data points ({percentage_reduction}% less).',color='green'
         )
 
     def remove_edge_artifacts(
@@ -305,12 +305,12 @@ class EyePreprocessor:
             if clean_missing_data_params is True:
                 clean_missing_data_params = {}
 
-            log('Cleaning missing data.')
+            log('Cleaning missing data.',color='green')
             self.clean_missing_data(**clean_missing_data_params)
 
         # Add velocity column
         if 'velocity' not in self.data or add_velocity_params:
-            log('Adding velocity column.')
+            log('Adding velocity column.',color='green')
 
             # Must be dict or bool
             assert isinstance(
@@ -327,7 +327,7 @@ class EyePreprocessor:
 
         # Clean data based on_col outlier criterion
         if remove_outliers_params:
-            log('Removing outliers based on MAD.')
+            log('Removing outliers based on MAD.',color='green')
 
             # Must be dict or bool
             assert isinstance(
@@ -354,7 +354,7 @@ class EyePreprocessor:
 
         # Get rid of edge artifacts
         if remove_edge_artifacts_params:
-            log('Removing edge artifacts.')
+            log('Removing edge artifacts.',color='green')
 
             # Must be dict or bool
             assert isinstance(

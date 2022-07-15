@@ -4,7 +4,7 @@
 | (__/ _` | | | '_ \ '_/ _` | | ' \
  \___\__,_|_|_|_.__/_| \__,_|_|_||_|
 
-- Coded on_col Wouter Durnez & Jonas De Bruyne
+- Coded by Wouter Durnez & Jonas De Bruyne
 """
 
 import os
@@ -121,19 +121,19 @@ class CalibrainTask:
     def _import_data(self):
 
         if self.heart:
-            log('Importing RR data.')
+            log('📋 Importing RR data.')
             self._import_heart()
 
         if self.events:
-            log('Importing event data.')
+            log('📋 Importing event data.')
             self._import_events()
 
         if self.subjective:
-            log('Importing subjective data.')
+            log('📋 Importing subjective data.')
             self._import_subjective()
 
         if self.eye:
-            log('Importing eye tracking data.')
+            log('📋 Importing eye tracking data.')
             self._import_eye()
 
         if self.eye or self.heart:
@@ -224,7 +224,7 @@ class CalibrainTask:
         ]
 
         if eye:
-            log('Labeling eye data.')
+            log('🏷️ Labeling eye data.')
 
             # Add labels
             self.events_data['event'] = pd.cut(
@@ -236,7 +236,7 @@ class CalibrainTask:
             )
 
         if heart:
-            log('Labeling RR data.')
+            log('🏷️ Labeling RR data.')
             # Add labels
             self.heart_data['event'] = pd.cut(
                 self.heart_data.timestamp,
@@ -255,17 +255,15 @@ class CalibrainTask:
             pass  # TODO
 
         if self.eye:
-            log('Preprocessing eye tracking data.')
+            log('\U0001f680 Preprocessing eye tracking data.')
             self.config['eye'].setdefault('preprocessing', {})
             self._preprocess_eye()
 
     def _preprocess_eye(self):
 
         # Create EyePreprocessor object, load data and parameters, and run through pipeline
-        eye_preprocessor = EyePreprocessor()
-        eye_preprocessor.load_params(**self.config['eye']['preprocessing'])
-        eye_preprocessor.load_data(data=self.eye_data)
-        self.eye_data = eye_preprocessor.pipeline(data=self.eye_data)
+        ep = EyePreprocessor()
+        self.eye_data = ep.pipeline(data=self.eye_data, **self.config['eye']['preprocessing'])
 
     ###############################
     # FEATURE CALCULATION METHODS #
@@ -312,7 +310,7 @@ class CalibrainCLT(CalibrainTask):
 
     # Import performance data
     def _import_performance(self):
-        log('Importing performance data.')
+        log('📋 Importing performance data.')
         self.performance_data = import_data_frame(
             path=self.dir / 'performance-clt.csv'
         )
@@ -342,7 +340,7 @@ class CalibrainMRT(CalibrainTask):
 
     # Import performance data
     def _import_performance(self):
-        log('Importing performance data.')
+        log('📋 Importing performance data.')
         self.performance_data = import_data_frame(
             path=self.dir / 'performance-mrt.csv'
         )
@@ -355,7 +353,7 @@ class CalibrainMRT(CalibrainTask):
 
     def _add_trial_info_performance(self):
         """
-        For the MRT, there are analysis on_col trial-level. Therefore, we have to label the data first.
+        For the MRT, there are analysis on trial-level. Therefore, we have to label the data first.
         We do this using the performance data.
         """
         self.performance_data['trial'] = (
@@ -381,7 +379,7 @@ class CalibrainMRT(CalibrainTask):
         self.trial_bounds = self.trial_bounds.filter(
             ['condition', 'trial_id', 'timestamp_start', 'timestamp_end']
         )
-        # Convert from wide to long to create bins later on_col
+        # Convert from wide to long to create bins later on
         self.trial_bounds = pd.wide_to_long(
             self.trial_bounds,
             stubnames='timestamp',
@@ -413,7 +411,7 @@ class CalibrainMRT(CalibrainTask):
         labels = insert_between_elements(labels, np.nan)
 
         if self.eye:
-            log('Labeling eye data (trials).')
+            log('🏷️ Labeling eye data (trials).')
             # Add labels
             self.eye_data['trial'] = pd.cut(
                 self.eye_data.timestamp,
@@ -442,7 +440,7 @@ class CalibrainData:
         )
         self.time_processed = time()
         log(
-            f'\U0001f680 Processing Calibrain data: user {self.id}, recorded on {dt.fromtimestamp(self.time_created)}.',
+            f'\U0001f9e0 Processing Calibrain data: user {self.id}, recorded on {dt.fromtimestamp(self.time_created)}.',
             verbosity=1,
         )
 

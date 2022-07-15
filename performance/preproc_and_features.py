@@ -46,7 +46,8 @@ def filter_by_mad(data: pd.DataFrame, on_col: str= "reaction_time", n:int =3):
 
     log(
         f'Outliers removed: {n_before - n_missing_before} -> {n_before - n_missing_after}'
-        f' data points ({percentage_reduction}% less).'
+        f' data points ({percentage_reduction}% less).',
+        color='green'
     )
 
 
@@ -60,7 +61,7 @@ def build_performance_data_frame(data: pd.DataFrame, task:str) -> pd.DataFrame:
     task = task.lower()
     assert task in ('clt', 'mrt')
 
-    log(f'Calculating performance stats for {task.upper()}.')
+    log(f'🚀 Calculating performance stats for {task.upper()}.')
 
     # Drop first trials
     data = data.groupby('condition').apply(lambda df: drop_first_trials(df, n=(None if task == 'clt' else 1)))
@@ -118,6 +119,9 @@ def build_performance_data_frame(data: pd.DataFrame, task:str) -> pd.DataFrame:
 
         # Append new columns
         matrix = matrix.join(rt_stats)
+
+    # Fill NaN
+    matrix.fillna(0, inplace=True)
 
     return matrix
 
