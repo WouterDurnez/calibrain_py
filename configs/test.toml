@@ -10,7 +10,6 @@
 ########################
 
 [mrt]
-
 heart = true                        # Heart data params (if true, use default)
 events = true                       # Event data params (if true, use default)
 performance = true                  # Performance data params (if true, use default)
@@ -42,11 +41,23 @@ subjective = true                   # Subjective data params (if true, use defau
       show_plot = false
 
     # Feature calculation steps
-    [mrt.eye.feature_calculation]
+    [mrt.eye.features]
 
-        [mrt.eye.feature_calculation.dummy_feature]
-        par1 = 1
-        par2 = true
+    gaze_object_col = "gaze_object"
+    groupby_col = "event"
+
+    entropy = true
+    absolute_gaze_switches = true
+    relative_gaze_switches = true
+    absolute_gaze_switches_to = ["Display_Screen","MRT_Supply_Vent"]
+    relative_gaze_switches_to = [
+        "Display_Screen",
+        "MRT_Supply_Vent"
+    ]
+
+        [mrt.eye.features.aoi_mapping]
+        Display_Screen = "AOI1"
+
 
 ################################
 # COGNITIVE LOAD TASK (n-back) #
@@ -84,10 +95,22 @@ subjective = true                   # Subjective data params (if true, use defau
       show_plot = false
 
     # Feature calculation steps
-    [clt.eye.feature_calculation]
+    [clt.eye.features]
 
-        [clt.eye.feature_calculation.dummy_feature]
-        par1 = 1
-        par2 = true
+    gaze_object_col = "gaze_object"
+    groupby_col = "event"
+
+    entropy = true
+    absolute_gaze_switches = true
+    relative_gaze_switches = true
+    absolute_gaze_switches_to = false
+    relative_gaze_switches_to = [
+        "Display_Screen",
+        "MRT_Supply_Vent"
+    ]
+
+        [clt.eye.features.aoi_mapping]
+        Display_Screen = "AOI1"
+
 
 

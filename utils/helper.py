@@ -9,6 +9,7 @@ from typing import Callable
 
 import pandas as pd
 import pyfiglet
+import toml
 from colorama import Fore, Style
 
 VERBOSITY = 3
@@ -172,6 +173,14 @@ def import_data_frame(path: str | Path, **kwargs):
         df['time'] = pd.to_datetime(df.timestamp, unit='ms', origin='unix')
 
     return df
+
+
+def load_config(path: str | Path):
+
+    with open(path) as config_file:
+        config = toml.load(config_file)
+
+    return config
 
 
 if __name__ == '__main__':

@@ -16,14 +16,18 @@ from utils.helper import log, import_data_frame
 def drop_first_trials(data_chunk: pd.DataFrame, n: int = None) -> pd.DataFrame:
 
     # Number of rows to drop
-    n_rows = n if n else  int(data_chunk.iloc[0].condition + 1) # N (in N-back) + 1
+    n_rows = (
+        n if n else int(data_chunk.iloc[0].condition + 1)
+    )   # N (in N-back) + 1
 
     # Set accuracy to 'drop' (0)
     data_chunk.loc[data_chunk.index[:n_rows], 'accuracy'] = np.nan
     return data_chunk
 
 
-def filter_by_mad(data: pd.DataFrame, on_col: str= "reaction_time", n:int =3):
+def filter_by_mad(
+    data: pd.DataFrame, on_col: str = 'reaction_time', n: int = 3
+):
 
     # Original number of data points
     n_before = len(data)
@@ -47,11 +51,13 @@ def filter_by_mad(data: pd.DataFrame, on_col: str= "reaction_time", n:int =3):
     log(
         f'Outliers removed: {n_before - n_missing_before} -> {n_before - n_missing_after}'
         f' data points ({percentage_reduction}% less).',
-        color='green'
+        color='green',
     )
 
 
-def build_performance_data_frame(data: pd.DataFrame, task:str) -> pd.DataFrame:
+def build_performance_data_frame(
+    data: pd.DataFrame, task: str
+) -> pd.DataFrame:
     """
     Build performance matrix for a task
     :param data: performance data frame from Calibrain task
@@ -59,12 +65,14 @@ def build_performance_data_frame(data: pd.DataFrame, task:str) -> pd.DataFrame:
     """
 
     task = task.lower()
-    assert task in ('clt', 'mrt')
+    assert task in ('clt', 'mrt'), 'Only CLT and MRT are supported!'
 
     log(f'🚀 Calculating performance stats for {task.upper()}.')
 
     # Drop first trials
-    data = data.groupby('condition').apply(lambda df: drop_first_trials(df, n=(None if task == 'clt' else 1)))
+    data = data.groupby('condition').apply(
+        lambda df: drop_first_trials(df, n=(None if task == 'clt' else 1))
+    )
 
     # Get some counts
     matrix = data.groupby('condition').accuracy.value_counts()
@@ -74,15 +82,9 @@ def build_performance_data_frame(data: pd.DataFrame, task:str) -> pd.DataFrame:
     # Label trial accuracy
     match task:
         case 'clt':
-            to_replace = {
-                -1: 'incorrect',
-                1: 'correct',
-                0: 'dropped'}
+            to_replace = {-1: 'incorrect', 1: 'correct', 0: 'dropped'}
         case 'mrt':
-            to_replace = {
-                1: 'correct',
-                0: 'incorrect'
-            }
+            to_replace = {1: 'correct', 0: 'incorrect'}
 
     matrix.accuracy.replace(to_replace, inplace=True)
     matrix = matrix.pivot(index='condition', columns='accuracy')
@@ -91,14 +93,16 @@ def build_performance_data_frame(data: pd.DataFrame, task:str) -> pd.DataFrame:
 
     # Add missing columns (if any) and calculate proportions
     matrix['total'] = data.groupby('condition').accuracy.count()
-    iterate_over = ['correct','incorrect']
-    if task == 'clt': iterate_over.append('dropped')
+    iterate_over = ['correct', 'incorrect']
+    if task == 'clt':
+        iterate_over.append('dropped')
     for col in iterate_over:
-        if col not in matrix: matrix[col] = 0
+        if col not in matrix:
+            matrix[col] = 0
         matrix[f'{col}_proportion'] = matrix[col] / matrix.total
 
     # MRT also contains reaction time
-    if task=='mrt':
+    if task == 'mrt':
 
         # First filter reaction time for outliers
         filter_by_mad(data=data, on_col='reaction_time')
@@ -112,9 +116,18 @@ def build_performance_data_frame(data: pd.DataFrame, task:str) -> pd.DataFrame:
             return percentile_
 
         # Calculate RT statistics
-        rt_stats = data.groupby('condition').reaction_time.agg([
-            'mean','std','median', 'min', 'max', percentile(5), percentile(50), percentile(95)
-        ])
+        rt_stats = data.groupby('condition').reaction_time.agg(
+            [
+                'mean',
+                'std',
+                'median',
+                'min',
+                'max',
+                percentile(5),
+                percentile(50),
+                percentile(95),
+            ]
+        )
         rt_stats.columns = [f'rt_{col}' for col in rt_stats.columns]
 
         # Append new columns
@@ -128,9 +141,12 @@ def build_performance_data_frame(data: pd.DataFrame, task:str) -> pd.DataFrame:
 
 if __name__ == '__main__':
 
-    clt_data = import_data_frame(path='../data/7_202205091017/CLT/performance-clt.csv')
-    mrt_data = import_data_frame(path='../data/7_202205091017/MRT/performance-mrt.csv')
+    clt_data = import_data_frame(
+        path='../data/7_202205091017/CLT/performance-clt.csv'
+    )
+    mrt_data = import_data_frame(
+        path='../data/7_202205091017/MRT/performance-mrt.csv'
+    )
 
     clt_performance = build_performance_data_frame(data=clt_data, task='clt')
     mrt_performance = build_performance_data_frame(data=mrt_data, task='mrt')
-
