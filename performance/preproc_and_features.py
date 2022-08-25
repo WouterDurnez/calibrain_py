@@ -4,7 +4,7 @@
 | (__/ _` | | | '_ \ '_/ _` | | ' \
  \___\__,_|_|_|_.__/_| \__,_|_|_||_|
 
-- Coded on_col Wouter Durnez & Jonas De Bruyne
+- Coded by Wouter Durnez & Jonas De Bruyne
 """
 
 import numpy as np
@@ -135,6 +135,20 @@ def build_performance_data_frame(
 
     # Fill NaN
     matrix.fillna(0, inplace=True)
+
+    # Cleanup
+    matrix = matrix.reset_index()
+    matrix.drop(columns=['accuracy'], inplace=True, errors='ignore')
+
+    # Rename condition levels
+    matrix.condition.replace(to_replace={
+        0: 'practice',
+        1: 'easy',
+        2: 'medium',
+        3: 'hard',
+    }, inplace=True)
+    matrix.set_index('condition', inplace=True)
+    matrix.columns.name = None
 
     return matrix
 

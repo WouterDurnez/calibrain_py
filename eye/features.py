@@ -70,9 +70,16 @@ class EyeFeatures:
         if not self.aoi_mapping:
             log('⚠️ No AOI mapping provided. Moving on...', color='red')
 
-        self.data['AOI'] = self.data[self.gaze_object_col].replace(
-            to_replace=self.aoi_mapping
+        data = self.data.copy()
+        data['AOI'] = data[self.gaze_object_col]
+        data.AOI.replace(
+            to_replace=self.aoi_mapping, inplace=True
         )
+        #self.data.loc[:,self.gaze_object_col].replace(
+        #    to_replace=self.aoi_mapping
+        #)
+
+        self.data = data
 
     ############
     # FEATURES #
@@ -293,8 +300,8 @@ class EyeFeatures:
             feature: value
             for feature, value in self.__dict__.items()
             if feature
-            in ['entropy', 'absolute_gaze_switches', 'relative_gaze_switches']
-            or feature.__contains__('gaze')
+            in ['entropy', ]
+            or feature.__contains__('gaze_switches')
         }
 
     #########################

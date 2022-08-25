@@ -294,6 +294,10 @@ class CalibrainTask:
             self.config['eye'].setdefault('features', {})
             self._calculate_eye_features()
 
+        # Gather features
+        feature_dfs = [getattr(self, attribute) for attribute in self.__dict__.keys() if attribute.endswith('features')]
+        self.features = pd.concat(feature_dfs, axis=1)
+
     def _calculate_eye_features(self):
 
         # TODO: Calculate per condition
@@ -303,11 +307,28 @@ class CalibrainTask:
         eye_feat_config = self.config['eye']['features']
 
         # Create EyeFeatures object, load data and parameters, and run through pipeline
+        self.eye_features = {}
         ef = EyeFeatures()
-        ef.pipeline(
-            data=self.eye_data, **eye_feat_config
-        )
-        self.eye_features = ef.features
+
+        log(f'🚀 Breaking up eye data in sections for processing.')
+
+        for event in self.eye_data.event.unique():
+
+            # Skip NaN (this is simply a lack of label)
+            if str(event) == 'nan':
+                continue
+
+            log(f'🚀 Moving on to <{event}> section.')
+
+            slice = self.eye_data.loc[self.eye_data.event == event]
+            ef.pipeline(
+                data=slice, **eye_feat_config
+            )
+            self.eye_features[event] = ef.features
+
+        # Combine features in feature data frame
+        self.eye_features = pd.DataFrame.from_dict(self.eye_features).T
+        self.eye_features  =self.eye_features[self.eye_features.index.notnull()]
 
     ###################
     # Generic methods #
@@ -368,7 +389,7 @@ class CalibrainMRT(CalibrainTask):
         super().__init__(dir=dir, **task_config)
         self._import_performance()
         self._preprocess_performance()
-        #self._add_trial_info_performance()
+        #self._add_trial_info_performance() # TODO: Fix this
         #self._get_trial_epochs()
         #self._add_trial_labels()
 
