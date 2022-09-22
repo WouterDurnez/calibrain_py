@@ -4,24 +4,18 @@
 | (__/ _` | | | '_ \ '_/ _` | | ' \
  \___\__,_|_|_|_.__/_| \__,_|_|_||_|
 
-- Coded by Wouter Durnez & Jonas De Bruyne
+- Coded on_col Wouter Durnez & Jonas De Bruyne
 """
 """
 Visual inspector: use this tool to visually check the data quality each participant
 """
 
-import pandas as pd
-from dash import Dash, dcc, html, Input, Output
 import dash_bootstrap_components as dbc
+from dash import Dash, html
 
-import calibrain
-
-from utils.helper import hi, log
-
-
+from utils.helper import hi
 
 if __name__ == '__main__':
-
     # Opening message
     hi('CaliBrain -- Visual Inspector')
 
@@ -48,16 +42,13 @@ if __name__ == '__main__':
 
     app.layout = html.Div(
         id='app-container',
-        children=[
-        ],
+        children=[],
         style={
             'height': '100vh',
             'width': '100vw',
             'position': 'relative',
-            'display': 'block'
+            'display': 'block',
         },
     )
-
-
 
     app.run_server(debug=False)

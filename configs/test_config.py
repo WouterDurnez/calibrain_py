@@ -1,8 +1,9 @@
-import yaml
-import toml
 from types import SimpleNamespace
-if __name__ == '__main__':
 
+import toml
+import yaml
+
+if __name__ == '__main__':
     with open('test.yaml') as yaml_file:
         config_yaml = yaml.load(yaml_file, Loader=yaml.Loader)
 

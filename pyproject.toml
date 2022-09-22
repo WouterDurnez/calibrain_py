@@ -17,9 +17,9 @@ plotly = "^5.8.0"
 numpy = "^1.23.0"
 scipy = "^1.8.1"
 seaborn = "^0.11.2"
-PyYAML = "^6.0"
 toml = "^0.10.2"
 matplotlib = "^3.5.2"
+biosppy = "^1.0.0"
 
 
 [tool.poetry.dev-dependencies]
