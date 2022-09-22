@@ -9,34 +9,27 @@ import plotly.io as pio
 pio.renderers.default = "browser"
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-mpl.use('MacOSX')
 import plotly.express as px
-
-def fix_timestamps(row):
-
-    part1 = str(row.timestamp).split('.')[0]
-    part2 = str(row.ts).split('.')[0]
-    return float(part1 + '.' + part2)
+import plotly.graph_objects as go
+from utils.helper import import_data_frame
+from scipy.signal import welch
 
 if __name__ == '__main__':
 
-    data = pd.read_csv(filepath_or_buffer='../data/dummy/ECG.csv')
+    data = import_data_frame('../data/klaas_202209130909/clt/ecg.csv')
     data.reset_index(drop=False, inplace=True)
-    data.columns = ['timestamp','ts','ecg']
-    data['timestamp_full'] = data.apply(fix_timestamps, axis=1)
 
-    start = data.timestamp_full.iloc[0]
-    stop = data.timestamp_full.iloc[-1]
+    duration = (data.timestamp.iloc[-1] - data.timestamp.iloc[0])/1000
+    sample_rate = len(data)/duration
 
-    new_timestamps = [start + i*1000/130 for i in range(len(data))]
-    data['timestamp_new'] = new_timestamps
-    stop_new = data.timestamp_new.iloc[-1]
+    results = ecg.ecg(data.ecg, sampling_rate=130, show=False, interactive=False)
+    results = dict(**results)
 
-    fig = px.line(data, y=['timestamp_full','timestamp_new'])
-    fig.show()
-
-    results = dict(**ecg.ecg(data.ecg[:1000], sampling_rate=130, show=False, interactive=False))
     rtimestamps = data.iloc[results['rpeaks']].timestamp - data.iloc[results['rpeaks']].timestamp.shift(1)
+
+    f, Px = welch(data.ecg, fs=sample_rate, nperseg=2048, scaling='spectrum')
+    plt.semilogy(f, Px)
+    plt.show()
 
     '''data['datetime'] = pd.to_datetime(data.timestamp, unit='ms')
 
@@ -60,10 +53,10 @@ if __name__ == '__main__':
 
     test = data.timestamp.rolling(1000).apply(sr).rolling(1000).mean()
     test.plot(title='rolling_sample_rate')'''
-    '''fig = go.Figure()
+    fig = go.Figure()
     fig.add_trace(
         trace={'x': data.index,
-               'y': data.ECG}
+               'y': data.ecg}
                   )
-    fig.show()'''
+    fig.show()
 

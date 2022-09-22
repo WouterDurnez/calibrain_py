@@ -165,9 +165,8 @@ class EyePreprocessor:
         percentage_reduction = round(new_missing / (n_before - n_missing_before), 2)
 
         log(
-            f"Outliers removed: {n_before - n_missing_before} -> {n_before - n_missing_after}"
+            f"ℹ️ Outliers removed: {n_before - n_missing_before} -> {n_before - n_missing_after}"
             f" data points ({percentage_reduction}% less).",
-            color="green",
         )
 
     def remove_edge_artifacts(

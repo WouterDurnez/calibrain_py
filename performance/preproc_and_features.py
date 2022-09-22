@@ -49,7 +49,7 @@ def filter_by_mad(
     )
 
     log(
-        f'Outliers removed: {n_before - n_missing_before} -> {n_before - n_missing_after}'
+        f'ℹ️ Outliers removed: {n_before - n_missing_before} -> {n_before - n_missing_after}'
         f' data points ({percentage_reduction}% less).',
         color='green',
     )
@@ -67,7 +67,7 @@ def build_performance_data_frame(
     task = task.lower()
     assert task in ('clt', 'mrt'), 'Only CLT and MRT are supported!'
 
-    log(f'🚀 Calculating performance stats for {task.upper()}.')
+    log(f'⚙️ Calculating performance stats for {task.upper()}.')
 
     # Drop first trials
     data = data.groupby('condition').apply(

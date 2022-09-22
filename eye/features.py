@@ -335,7 +335,7 @@ if __name__ == '__main__':
     config = load_config(path='../configs/test.toml')
 
     # Load and select data
-    data = import_data_frame(path='../data/7_202205091017/MRT/eye.csv')
+    data = import_data_frame(path='../data/7_202205091017/CLT/eye.csv')
     data = data.filter(
         items=[
             'timestamp',

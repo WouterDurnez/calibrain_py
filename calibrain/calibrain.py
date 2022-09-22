@@ -2,7 +2,7 @@
   ___      _ _ _             _
  / __|__ _| (_) |__ _ _ __ _(_)_ _
 | (__/ _` | | | '_ \ '_/ _` | | ' \
- \___\__,_|_|_|_.__/_| \__,_|_|_||_|
+\___\__,_|_|_|_.__/_| \__,_|_|_||_|
 
 - Coded by Wouter Durnez & Jonas De Bruyne
 """
@@ -139,10 +139,10 @@ class CalibrainTask:
             self._import_eye()
 
         if self.eye or self.heart:
-            self._add_condition_labels()
+            self._add_condition_labels()   # TODO: this is broken, fix it
 
     def _import_heart(self):
-        self.heart_data = import_data_frame(path=self.dir / 'raw-heart.csv')
+        self.heart_data = import_data_frame(path=self.dir / 'ecg.csv')
 
     def _import_eye(self):
 
@@ -226,7 +226,15 @@ class CalibrainTask:
             'hard',
         ]
 
+        if len(bins) != len(labels) + 1:
+            log(
+                f'⚠️ Event data frame appears incomplete! Interrupted experience? Proceeding with fewer labels.',
+                verbosity=1,
+            )
+            labels = labels[: len(bins) - 1]
+
         if self.eye:
+
             log('🏷️ Labeling eye data.')
 
             # Add labels
@@ -239,7 +247,9 @@ class CalibrainTask:
             )
 
         if self.heart:
+
             log('🏷️ Labeling RR data.')
+
             # Add labels
             self.heart_data['event'] = pd.cut(
                 self.heart_data.timestamp,
@@ -258,7 +268,9 @@ class CalibrainTask:
             pass  # TODO
 
         if self.eye:
+
             log('🚀 Preprocessing eye tracking data.')
+
             self.config['eye'].setdefault('preprocessing', {})
             self._preprocess_eye()
 
@@ -266,6 +278,8 @@ class CalibrainTask:
 
         # Set default parameters
         eye_prep_config = self.config['eye']['preprocessing']
+
+        # Set defaults for all steps (in case they aren't set in config)
         for step in (
             'add_velocity_params',
             'clean_missing_data_params',
@@ -294,10 +308,6 @@ class CalibrainTask:
             self.config['eye'].setdefault('features', {})
             self._calculate_eye_features()
 
-        # Gather features
-        feature_dfs = [getattr(self, attribute) for attribute in self.__dict__.keys() if attribute.endswith('features')]
-        self.features = pd.concat(feature_dfs, axis=1)
-
     def _calculate_eye_features(self):
 
         # TODO: Calculate per condition
@@ -321,14 +331,14 @@ class CalibrainTask:
             log(f'🚀 Moving on to <{event}> section.')
 
             slice = self.eye_data.loc[self.eye_data.event == event]
-            ef.pipeline(
-                data=slice, **eye_feat_config
-            )
+            ef.pipeline(data=slice, **eye_feat_config)
             self.eye_features[event] = ef.features
 
         # Combine features in feature data frame
         self.eye_features = pd.DataFrame.from_dict(self.eye_features).T
-        self.eye_features  =self.eye_features[self.eye_features.index.notnull()]
+        self.eye_features = self.eye_features[
+            self.eye_features.index.notnull()
+        ]
 
     ###################
     # Generic methods #
@@ -352,6 +362,16 @@ class CalibrainTask:
             f'\t-Subjective data:\t{self.subjective}'
         )
 
+    def __term__(self):
+
+        # Gather features
+        feature_dfs = [
+            getattr(self, attribute)
+            for attribute in self.__dict__.keys()
+            if attribute.endswith('features')
+        ]
+        self.features = pd.concat(feature_dfs, axis=1)
+
 
 class CalibrainCLT(CalibrainTask):
     """
@@ -363,8 +383,9 @@ class CalibrainCLT(CalibrainTask):
         super().__init__(dir=dir, **task_config)
         self._import_performance()
         self._preprocess_performance()
+        super().__term__()
 
-        log(f'\U0001f3c1 Done with {self.task_name}!', verbosity=1)
+        log(f'🏁 Done with {self.task_name}!', verbosity=1)
 
     # Import performance data
     def _import_performance(self):
@@ -389,11 +410,12 @@ class CalibrainMRT(CalibrainTask):
         super().__init__(dir=dir, **task_config)
         self._import_performance()
         self._preprocess_performance()
-        #self._add_trial_info_performance() # TODO: Fix this
-        #self._get_trial_epochs()
-        #self._add_trial_labels()
+        self._add_trial_info_performance()   # TODO: Fix this
+        # self._get_trial_epochs()
+        # self._add_trial_labels()
+        super().__term__()
 
-        log(f'\U0001f3c1 Done with {self.task_name}!', verbosity=1)
+        log(f'🏁 Done with {self.task_name}!', verbosity=1)
 
     # Import performance data
     def _import_performance(self):
@@ -482,7 +504,7 @@ class CalibrainData:
     def __init__(
         self,
         dir: str | Path,
-        **task_params,
+        **config,
     ):
 
         super().__init__()
@@ -498,32 +520,36 @@ class CalibrainData:
         log(
             f'🧠 Processing Calibrain data: user {self.id}, recorded on {dt.fromtimestamp(self.time_created)}.',
             verbosity=1,
-            color='blue'
+            color='blue',
         )
 
         # Define valid tasks
         self.__valid_tasks = ('clt', 'mrt')
 
         # Set some default behavior
-        task_params = {} if task_params is None else task_params
-        task_params.setdefault('mrt', True)
-        task_params.setdefault('clt', True)
+        config = {} if config is None else config
+        config.setdefault('mrt', True)
+        config.setdefault('clt', True)
 
         # Import data
-        self._import_data(**task_params)
+        self._import_data(**config)
 
     def _check_valid_dir(self):
         """
         Check whether directory contains appropriate folders and files
         """
         files_and_folders = os.listdir(self.dir)
-        assert 'CLT' in files_and_folders, f'⚠️ Expected CLT folder in directory <{self.dir}>!'
-        assert 'MRT' in files_and_folders, f'⚠️ Expected MRT folder in directory <{self.dir}>!'
+        assert (
+            'CLT' in files_and_folders
+        ), f'⚠️ Expected CLT folder in directory <{self.dir}>!'
+        assert (
+            'MRT' in files_and_folders
+        ), f'⚠️ Expected MRT folder in directory <{self.dir}>!'
         assert (
             'demographics.csv' in files_and_folders
         ), '⚠️ Expected demographics file in directory!'
 
-    def _import_data(self, **task_params):
+    def _import_data(self, **config):
 
         # Demographics
         self.demo = (
@@ -533,9 +559,7 @@ class CalibrainData:
         )
 
         # Import data for specified measures
-        tasks_to_process = (
-            task for task in task_params.keys() if task_params[task]
-        )
+        tasks_to_process = (task for task in config.keys() if config[task])
         for task in tasks_to_process:
 
             # Check if task is valid
@@ -544,15 +568,13 @@ class CalibrainData:
             ), f'"{task} is not a valid task! Try {self.__valid_tasks}.'
 
             # Unpack measure parameters and set defaults
-            measure_params = (
-                task_params[task]
-                if isinstance(task_params[task], dict)
-                else {}
+            task_config = (
+                config[task] if isinstance(config[task], dict) else {}
             )
-            measure_params.setdefault('heart', {})
-            measure_params.setdefault('eye', {})
-            measure_params.setdefault('events', {})
-            measure_params.setdefault('subjective', {})
+            task_config.setdefault('heart', {})
+            task_config.setdefault('eye', {})
+            task_config.setdefault('events', {})
+            task_config.setdefault('subjective', {})
 
             # Create appropriate task
             match task:
@@ -560,12 +582,12 @@ class CalibrainData:
                 # Cognitive load task
                 case 'clt':
                     self.clt = CalibrainCLT(
-                        dir=self.dir / 'CLT', **measure_params
+                        dir=self.dir / 'CLT', **task_config
                     )
 
                 case 'mrt':
                     self.mrt = CalibrainMRT(
-                        dir=self.dir / 'MRT', **measure_params
+                        dir=self.dir / 'MRT', **task_config
                     )
 
     def __repr__(self):
@@ -583,14 +605,14 @@ if __name__ == '__main__':
     with open('../configs/test.toml') as config_file:
         config = toml.load(config_file)
 
-    # Temp
-    # config.pop('mrt')
+    # Only do CLT
+    # onfig['mrt'] = False
 
-    dir = Path('../data/7_202205091017')
-    #data_folders = [f for f in dir.iterdir() if f.is_dir()]
-    #data = []
+    dir = Path('../data/klaas_202209130909')
+    # data_folders = [f for f in dir.iterdir() if f.is_dir()]
+    # data = []
 
-    #for df in data_folders:
+    # for df in data_folders:
     #    try:
     #        data.append(CalibrainData(dir=df, **config))
     #    except Exception as e:
