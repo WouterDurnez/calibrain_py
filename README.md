@@ -19,7 +19,7 @@ output currently includes:
 * Demographic info
 * Performance data
 * Eye-tracking data
-* Heart data (RR intervals)
+* Heart data (ECG)
 * Subjective data (questionnaires)
 
 All settings are gathered in a [config file](configs/test.toml) to facilitate on the fly changes to the global pipeline.
