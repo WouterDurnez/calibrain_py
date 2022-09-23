@@ -18,8 +18,9 @@ numpy = "^1.23.0"
 scipy = "^1.8.1"
 seaborn = "^0.11.2"
 toml = "^0.10.2"
-matplotlib = "^3.5.2"
+matplotlib = ">=3.5.2,<3.6.0"
 biosppy = "^1.0.0"
+setuptools = "^65.3.0"
 
 
 [tool.poetry.dev-dependencies]
