@@ -99,6 +99,8 @@ class HeartPreprocessor:
         # create new df with timestamps of r-peaks and rr-intervals
         r_peak_timestamps['rr_int'] = r_peak_timestamps.diff()
 
+        return r_peak_timestamps
+
     def pipeline(self, data: pd.DataFrame = None, **params):
 
         # Load new parameters if provided
@@ -135,12 +137,12 @@ class HeartPreprocessor:
             rr_peak_detection_params.setdefault("detector", "engzee_detector")
 
             # Execute method
-            self.rr_peak_detection(
+            r_peak_timestamps = self.rr_peak_detection(
                 **rr_peak_detection_params,
             )
 
         # Return preprocessed data frame
-        return self.data
+        return r_peak_timestamps
 
 
 if __name__ == '__main__':
@@ -156,7 +158,7 @@ if __name__ == '__main__':
     data = import_data_frame(path="../data/klaas_202209130909/clt/ecg.csv")
 
     # Try pipeline
-    preprocessed_data = HeartPreprocessor(
+    rr_data = HeartPreprocessor(
         data=data, **heart_preprocessing_params
     ).pipeline()
 
