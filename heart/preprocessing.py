@@ -9,17 +9,7 @@ from utils.helper import log, import_data_frame
 
 from ecgdetectors import Detectors
 
-
-
-#from biosppy.signals import ecg
-#pd.options.plotting.backend = 'plotly'
-#import plotly.io as pio
-#pio.renderers.default = "browser"
-#import matplotlib as mpl
-#import matplotlib.pyplot as plt
-#import plotly.express as px
-#import plotly.graph_objects as go
-#from scipy.signal import welch
+#TODO: do we need denoising? filtering? baseline fitting?
 
 class HeartPreprocessor:
     def __init__(self, data: pd.DataFrame = None, **params):
@@ -52,6 +42,9 @@ class HeartPreprocessor:
         ), f"Need unix epoch timestamps in time column '{self.time_col}'"
 
     def load_params(self, **params):
+        """
+        Load parameters
+        """
 
         params = params if params else {}
 
@@ -91,12 +84,12 @@ class HeartPreprocessor:
             'engzee_detector': detectors.engzee_detector,
         }
 
-        # get timestamps of r-peaks
+        # Get timestamps of r-peaks
         r_peak_indexes = detectors[detector](self.data[self.ecg_col])
         r_peak_timestamps = pd.DataFrame(self.data[self.time_col].iloc[r_peak_indexes],
                                          columns=[self.time_col])
 
-        # create new df with timestamps of r-peaks and rr-intervals
+        # Create new df with timestamps of r-peaks and a new column with rr-intervals
         r_peak_timestamps['rr_int'] = r_peak_timestamps.diff()
 
         return r_peak_timestamps
@@ -117,10 +110,10 @@ class HeartPreprocessor:
         # Line up arguments
         rr_peak_detection_params = self.params["rr_peak_detection_params"]
 
-        # get sfreq
+        # Get sfreq
         self.check_sfreq()
 
-        # detect r-peaks
+        # Detect r-peaks
         if rr_peak_detection_params:
             log("⚙️ Detecting r-peaks.", color="green")
 
@@ -154,7 +147,7 @@ if __name__ == '__main__':
         config = toml.load(config_file)
     heart_preprocessing_params = config["mrt"]["heart"]["preprocessing"]
 
-    # get data
+    # Get data
     data = import_data_frame(path="../data/klaas_202209130909/clt/ecg.csv")
 
     # Try pipeline
@@ -163,51 +156,5 @@ if __name__ == '__main__':
     ).pipeline()
 
     #test = HeartPreprocessor(data)
-
-    '''
-    data = import_data_frame('../data/klaas_202209130909/clt/ecg.csv')
-    data.reset_index(drop=False, inplace=True)
-
-    duration = (data.timestamp.iloc[-1] - data.timestamp.iloc[0])/1000
-    sample_rate = len(data)/duration
-
-    results = ecg.ecg(data.ecg, sampling_rate=130, show=False, interactive=False)
-    results = dict(**results)
-
-    rtimestamps = data.iloc[results['rpeaks']].timestamp - data.iloc[results['rpeaks']].timestamp.shift(1)
-
-    f, Px = welch(data.ecg, fs=sample_rate, nperseg=2048, scaling='spectrum')
-    plt.semilogy(f, Px)
-    plt.show()
-
-    data['datetime'] = pd.to_datetime(data.timestamp, unit='ms')
-
-    total_duration = (data.datetime.iloc[-1] - data.datetime.iloc[0]).total_seconds()
-    total_samples = len(data)
-    sample_rate_global = total_samples/total_duration
-    print(f'Total duration: {total_duration} seconds - total samples: {total_samples} --> sample rate of {sample_rate_global} Hz')
-
-    data['datetime_shift'] = data.datetime.shift(-1)
-    data['difference'] = (data.datetime_shift - data.datetime).dt.total_seconds()
-    data_new = data.loc[(data.difference > 0.0)]
-    test = data.difference.value_counts()
-    plt.plot(test.values)
-    plt.show()
-
-    def sr(datetime_series):
-        total_duration = (datetime_series.iloc[-1] - datetime_series.iloc[0])/1000
-        total_samples = len(datetime_series)
-        sample_rate_local = total_samples / total_duration
-        return sample_rate_local
-
-    test = data.timestamp.rolling(1000).apply(sr).rolling(1000).mean()
-    test.plot(title='rolling_sample_rate')
-    fig = go.Figure()
-    fig.add_trace(
-        trace={'x': data.index,
-               'y': data.ecg}
-                  )
-    #fig.show()
-    '''
 
 
