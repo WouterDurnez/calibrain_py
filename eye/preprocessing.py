@@ -24,11 +24,15 @@ pio.renderers.default = "browser"
 class EyePreprocessor:
     def __init__(self, data: pd.DataFrame = None, **params):
 
-        # Load params
+        # Set attributes
         self.data = None
+        self.params = None
         self.pupil_col = None
         self.time_col = None
-        self.load_params(**params)
+
+        # Load parameters if given
+        if params is not None:
+            self.load_params(**params)
 
         # Load data
         if data is not None:
@@ -52,6 +56,13 @@ class EyePreprocessor:
         ), f"Need unix epoch timestamps in time column '{self.time_col}'"
 
     def load_params(self, **params):
+        """
+        Load preprocessing parameter set
+        """
+
+        # Check if parameters have been set yet, they will be overwritten
+        if hasattr(self, 'params') and self.data is not None:
+            log('⚠️ Overwriting previous parameters!')
 
         params = params if params else {}
 
@@ -136,7 +147,7 @@ class EyePreprocessor:
 
         # Median absolute deviation
         median = self.data[on_col].median()
-        mad = self.data[on_col].mad()  # (np.abs(self.data[on_col] - median)).median()
+        mad = (np.abs(self.data[on_col] - median)).median()
                                        # FutureWarning:
                                        # The 'mad' method is deprecated and will be removed
                                        # in a future version. To compute the same result, you
@@ -273,7 +284,8 @@ class EyePreprocessor:
     def pipeline(self, data: pd.DataFrame = None, **params):
 
         # Load new parameters if provided
-        self.load_params(**params)
+        if params:
+            self.load_params(**params)
 
         # Load data if provided
         if data is not None:
@@ -418,8 +430,8 @@ if __name__ == "__main__":
 
     # Try pipeline
     preprocessed_data = EyePreprocessor(
-        data=data, **eye_preprocessing_params
-    ).pipeline()
+        data=data,
+    ).pipeline(**eye_preprocessing_params)
 
     fig = data.left_pupil_size.plot()
     # data.set_index('timestamp', inplace=True)

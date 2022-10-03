@@ -14,12 +14,14 @@ from ecgdetectors import Detectors
 class HeartPreprocessor:
     def __init__(self, data: pd.DataFrame = None, **params):
 
-        # Load params
+        # Set attributes
         self.data = None
+        self.params = None
         self.ecg_col = None
         self.time_col = None
 
-        if params:
+        # Load parameters if given
+        if params is not None:
             self.load_params(**params)
 
         # Load data
@@ -45,8 +47,10 @@ class HeartPreprocessor:
 
     def load_params(self, **params):
         """
-        Load parameters
+        Load preprocessing parameter set
         """
+
+        # Check if parameters have been set yet, they will be overwritten
         if hasattr(self, 'params'):
             log('⚠️ Overwriting previous parameters!')
 
@@ -65,7 +69,6 @@ class HeartPreprocessor:
         self.params = params
 
     def check_sample_frequency(self):
-
         """
         Calculates sampling frequency
         """
@@ -73,7 +76,7 @@ class HeartPreprocessor:
         self.duration = (self.data[self.time_col].iloc[-1] - self.data[self.time_col].iloc[0]) / 1000
         self.sample_rate = len(self.data) / self.duration
 
-    def rr_peak_detection(self, detector: str = "engzee_detector"):
+    def rr_peak_detection(self, detector: str = "engzee"):
         """
         Detects rr-peaks and outputs indexes of peaks
         """
@@ -82,15 +85,15 @@ class HeartPreprocessor:
         detectors = Detectors(self.sample_rate)
 
         detectors = {
-            'hamilton_detector': detectors.hamilton_detector,
-            'christov_detector': detectors.christov_detector,
-            'engzee_detector': detectors.engzee_detector,
+            'hamilton': detectors.hamilton_detector,
+            'christov': detectors.christov_detector,
+            'engzee': detectors.engzee_detector,
         }
 
         assert (
                 detector in detectors
-        ), f'⚠️ Expected one of the following r-peak detectors: hamilton_detector, ' \
-           f'christov_detector, engzee_detector. Got {detector}'
+        ), f'⚠️ Expected one of the following r-peak detectors: hamilton, ' \
+           f'christov, engzee. Got {detector}.'
 
         # Get timestamps of r-peaks
         r_peak_indexes = detectors[detector](self.data[self.ecg_col])
@@ -127,6 +130,7 @@ class HeartPreprocessor:
 
         # Detect r-peaks
         if rr_peak_detection_params:
+
             log("⚙️ Detecting r-peaks.", color="green")
 
             # Must be dict or bool

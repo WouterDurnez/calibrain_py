@@ -27,7 +27,8 @@ class EyeFeatures:
         self.relative_gaze_switches = None
 
         # Load params
-        self.load_params(**params)
+        if params:
+            self.load_params(**params)
 
         # Load data
         if data is not None:
@@ -272,7 +273,8 @@ class EyeFeatures:
     def pipeline(self, data: pd.DataFrame = None, **params):
 
         # Load new parameters if provided
-        self.load_params(**params)
+        if params:
+            self.load_params(**params)
 
         # Load data if provided
         if data is not None:
@@ -303,7 +305,6 @@ class EyeFeatures:
             in ['entropy', ]
             or feature.__contains__('gaze_switches')
         }
-
     #########################
     # Visualization methods #
     #########################
@@ -335,7 +336,7 @@ if __name__ == '__main__':
     config = load_config(path='../configs/test.toml')
 
     # Load and select data
-    data = import_data_frame(path='../data/7_202205091017/CLT/eye.csv')
+    data = import_data_frame(path='../data/klaas_202209130909/MRT/eye.csv')
     data = data.filter(
         items=[
             'timestamp',
@@ -375,6 +376,6 @@ if __name__ == '__main__':
     ).pipeline()
 
     # Feature calculation
-    feature_object = EyeFeatures(data=prepped_data)
-    feature_object.pipeline(**config['mrt']['eye']['features'])
-    # feature_object.visualize_transition_matrix(normalized=False)
+    #feature_object = EyeFeatures(data=prepped_data)
+    #feature_object.pipeline(**config['mrt']['eye']['features'])
+    #feature_object.visualize_transition_matrix(normalized=True)

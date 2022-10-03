@@ -10,7 +10,6 @@
 ########################
 
 [mrt]
-#heart = true                        # Heart data params (if true, use default)
 events = true                       # Event data params (if true, use default)
 performance = true                  # Performance data params (if true, use default)
 subjective = true                   # Subjective data params (if true, use default)
@@ -80,7 +79,6 @@ subjective = true                   # Subjective data params (if true, use defau
 ################################
 
 [clt]
-#heart = true                        # Heart data params (if true, use default)
 events = true                       # Event data params (if true, use default)
 performance = true                  # Performance data params (if true, use default)
 subjective = true                   # Subjective data params (if true, use default)
@@ -121,12 +119,12 @@ subjective = true                   # Subjective data params (if true, use defau
     relative_gaze_switches = true
     absolute_gaze_switches_to = false
     relative_gaze_switches_to = [
-        "Display_Screen",
-        "MRT_Supply_Vent"
+        "MRT_Screen",
+        "MRT_Shape"
     ]
 
         [clt.eye.features.aoi_mapping]
-        Display_Screen = "AOI1"
+        MRT_screen = "AOI1"
 
 # Heart data (ecg)
 [clt.heart]
@@ -137,7 +135,7 @@ subjective = true                   # Subjective data params (if true, use defau
     ecg_col = "ecg"
 
         [clt.heart.preprocessing.rr_peak_detection_params]
-        detector = "jonas_is_aan_het_dutsen"
+        detector = "engzee"
 
     # Feature calculation steps
     [clt.heart.features]
