@@ -20,6 +20,7 @@ from tqdm import tqdm
 import utils.helper as hlp
 from eye.features import EyeFeatures
 from eye.preprocessing import EyePreprocessor
+from heart.preprocessing import HeartPreprocessor
 from performance.preproc_and_features import build_performance_data_frame
 from utils.helper import log, import_data_frame
 
@@ -265,7 +266,10 @@ class CalibrainTask:
     def _preprocess_data(self):
 
         if self.heart:
-            pass  # TODO
+            log('🚀 Preprocessing ECG data.')
+
+            self.config['heart'].setdefault('preprocessing', {})
+            self._preprocess_heart()
 
         if self.eye:
 
@@ -292,6 +296,22 @@ class CalibrainTask:
         ep = EyePreprocessor()
         self.eye_data = ep.pipeline(
             data=self.eye_data, **self.config['eye']['preprocessing']
+        )
+
+    def _preprocess_heart(self):
+
+        # Set default parameters
+        heart_prep_config = self.config['heart']['preprocessing']
+
+        # Set defaults for all steps (in case they aren't set in config)
+        for step in (
+                'rr_peak_detection_params',
+        ):
+            heart_prep_config.setdefault(step, True)
+
+        hp = HeartPreprocessor()
+        self.rr_data = hp.pipeline(
+            data=self.heart_data, **self.config['heart']['preprocessing']
         )
 
     ###############################
@@ -608,7 +628,7 @@ if __name__ == '__main__':
     # Only do CLT
     # onfig['mrt'] = False
 
-    dir = Path('../data/klaas_202209130909')
+    #dir = Path('../data/klaas_202209130909')
     # data_folders = [f for f in dir.iterdir() if f.is_dir()]
     # data = []
 
@@ -619,4 +639,18 @@ if __name__ == '__main__':
     #        log(f'Failed for <{df}>...', color='red',verbosity=1)
     #        log(e)
 
-    data = CalibrainData(dir=dir, **config)
+    dirs = [
+        Path('../data/klaas_202209130909'),
+        #Path('../data/alex_202209151321'),
+        #Path('../data/charlotte_202209221418'),
+        #Path('../data/john_202209211101'),
+        #Path('../data/jonas_202209191625'),
+        #Path('../data/wouter_202209221309'),
+    ]
+    mrt_perf = {}
+    for dir in dirs:
+        data = CalibrainData(dir=dir, **config)
+        mrt_perf[data.id] = data.mrt.performance_features
+
+    # test = pd.concat(mrt_perf).reset_index()
+    # test.rename(columns={"level_0": "id"}, inplace=True)
