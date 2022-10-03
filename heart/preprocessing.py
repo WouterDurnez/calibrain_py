@@ -18,7 +18,9 @@ class HeartPreprocessor:
         self.data = None
         self.ecg_col = None
         self.time_col = None
-        self.load_params(**params)
+
+        if params:
+            self.load_params(**params)
 
         # Load data
         if data is not None:
@@ -45,6 +47,8 @@ class HeartPreprocessor:
         """
         Load parameters
         """
+        if hasattr(self, 'params'):
+            log('⚠️ Overwriting previous parameters!')
 
         params = params if params else {}
 
@@ -60,7 +64,7 @@ class HeartPreprocessor:
         params.setdefault("rr_peak_detection_params", True)
         self.params = params
 
-    def check_sfreq(self):
+    def check_sample_frequency(self):
 
         """
         Calculates sampling frequency
@@ -70,7 +74,6 @@ class HeartPreprocessor:
         self.sample_rate = len(self.data) / self.duration
 
     def rr_peak_detection(self, detector: str = "engzee_detector"):
-
         """
         Detects rr-peaks and outputs indexes of peaks
         """
@@ -120,7 +123,7 @@ class HeartPreprocessor:
         rr_peak_detection_params = self.params["rr_peak_detection_params"]
 
         # Get sfreq
-        self.check_sfreq()
+        self.check_sample_frequency()
 
         # Detect r-peaks
         if rr_peak_detection_params:
@@ -160,8 +163,8 @@ if __name__ == '__main__':
     data = import_data_frame(path="../data/klaas_202209130909/clt/ecg.csv")
 
     # Try pipeline
-    rr_data = HeartPreprocessor(
-        data=data, **heart_preprocessing_params
-    ).pipeline()
+    heart_prep = HeartPreprocessor(data=data, **heart_preprocessing_params)
+    rr_data = heart_prep.pipeline(**heart_preprocessing_params)
 
     #test = HeartPreprocessor(data)
+

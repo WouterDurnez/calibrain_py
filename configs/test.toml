@@ -137,7 +137,7 @@ subjective = true                   # Subjective data params (if true, use defau
     ecg_col = "ecg"
 
         [clt.heart.preprocessing.rr_peak_detection_params]
-        detector = "engzee_detector"
+        detector = "jonas_is_aan_het_dutsen"
 
     # Feature calculation steps
     [clt.heart.features]
