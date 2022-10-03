@@ -123,7 +123,7 @@ class CalibrainTask:
     def _import_data(self):
 
         if self.heart:
-            log('📋 Importing RR data.')
+            log('📋 Importing ECG data.')
             self._import_heart()
 
         if self.events:
@@ -248,7 +248,7 @@ class CalibrainTask:
 
         if self.heart:
 
-            log('🏷️ Labeling RR data.')
+            log('🏷️ Labeling ECG data.')
 
             # Add labels
             self.heart_data['event'] = pd.cut(
