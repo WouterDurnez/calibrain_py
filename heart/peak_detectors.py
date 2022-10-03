@@ -21,6 +21,8 @@ if __name__ == '__main__':
 
     # import data
     data = import_data_frame('../data/klaas_202209130909/clt/ecg.csv')
+
+    #data = import_data_frame('../data/999_202209231439/mrt/ecg.csv')
     data.reset_index(drop=False, inplace=True)
 
     # extract sf

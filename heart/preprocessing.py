@@ -63,6 +63,12 @@ class HeartPreprocessor:
         # If no step arguments are given: run everything with default parameters
         params.setdefault("rr_peak_detection_params", True)
         self.params = params
+        '''
+        assert (
+                detector in detectors
+        ), f'⚠️ Expected one of the following r-peak detectors: hamilton_detector, ' \
+           f'christov_detector, engzee_detector. Got {detector}'
+        '''
 
     def check_sample_frequency(self):
 
@@ -86,11 +92,6 @@ class HeartPreprocessor:
             'christov_detector': detectors.christov_detector,
             'engzee_detector': detectors.engzee_detector,
         }
-
-        assert (
-                detector in detectors
-        ), f'⚠️ Expected one of the following r-peak detectors: hamilton_detector, ' \
-           f'christov_detector, engzee_detector. Got {detector}'
 
         # Get timestamps of r-peaks
         r_peak_indexes = detectors[detector](self.data[self.ecg_col])
