@@ -84,6 +84,11 @@ class HeartPreprocessor:
             'engzee_detector': detectors.engzee_detector,
         }
 
+        assert (
+                detector in detectors
+        ), f'⚠️ Expected one of the following r-peak detectors: hamilton_detector, ' \
+           f'christov_detector, engzee_detector. Got {detector}'
+
         # Get timestamps of r-peaks
         r_peak_indexes = detectors[detector](self.data[self.ecg_col])
         r_peak_timestamps = pd.DataFrame(self.data[self.time_col].iloc[r_peak_indexes],
@@ -91,6 +96,10 @@ class HeartPreprocessor:
 
         # Create new df with timestamps of r-peaks and a new column with rr-intervals
         r_peak_timestamps['rr_int'] = r_peak_timestamps.diff()
+
+        # add event column if heart_data has already been labeled
+        if 'event' in self.data.columns:
+            r_peak_timestamps['event'] = self.data['event'].iloc[r_peak_timestamps.index]
 
         return r_peak_timestamps
 
@@ -145,7 +154,7 @@ if __name__ == '__main__':
     # Load config
     with open("../configs/test.toml") as config_file:
         config = toml.load(config_file)
-    heart_preprocessing_params = config["mrt"]["heart"]["preprocessing"]
+    heart_preprocessing_params = config["clt"]["heart"]["preprocessing"]
 
     # Get data
     data = import_data_frame(path="../data/klaas_202209130909/clt/ecg.csv")
@@ -156,5 +165,3 @@ if __name__ == '__main__':
     ).pipeline()
 
     #test = HeartPreprocessor(data)
-
-

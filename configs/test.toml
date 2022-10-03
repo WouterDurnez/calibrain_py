@@ -66,10 +66,13 @@ subjective = true                   # Subjective data params (if true, use defau
     time_col = "timestamp"
     ecg_col = "ecg"
 
-    [mrt.heart.preprocessing.rr_peak_detection_params]
-    detector = "engzee_detector"
+        [mrt.heart.preprocessing.rr_peak_detection_params]
+        detector = "engzee_detector"
 
-
+    # Feature calculation steps
+    [mrt.heart.features]
+    time_col = "timestamp"
+    rr_col = "rr_int"
 
 
 ################################
@@ -77,7 +80,7 @@ subjective = true                   # Subjective data params (if true, use defau
 ################################
 
 [clt]
-heart = true                        # Heart data params (if true, use default)
+#heart = true                        # Heart data params (if true, use default)
 events = true                       # Event data params (if true, use default)
 performance = true                  # Performance data params (if true, use default)
 subjective = true                   # Subjective data params (if true, use default)
@@ -125,5 +128,19 @@ subjective = true                   # Subjective data params (if true, use defau
         [clt.eye.features.aoi_mapping]
         Display_Screen = "AOI1"
 
+# Heart data (ecg)
+[clt.heart]
 
+    # Preprocessing steps
+    [clt.heart.preprocessing]
+    time_col = "timestamp"
+    ecg_col = "ecg"
+
+        [clt.heart.preprocessing.rr_peak_detection_params]
+        detector = "engzee_detector"
+
+    # Feature calculation steps
+    [clt.heart.features]
+    time_col = "timestamp"
+    rr_col = "rr_int"
 
