@@ -51,9 +51,9 @@ class HeartFeatures:
 
         # Load data
         if rr_data is not None:
-            self.load_data(data=rr_data)
+            self.load_data(rr_data=rr_data)
 
-    def load_data(self, data):
+    def load_data(self, rr_data):
         self.rr_data = rr_data
 
     def load_params(self, **params):
@@ -89,38 +89,38 @@ class HeartFeatures:
         """
         Calculates all time-domain hrv features
         """
-        self.mean_rri = hrv(rpeaks=rr_data[self.time_col])['nni_mean']
+        self.mean_rri = hrv(rpeaks=self.rr_data[self.time_col])['nni_mean']
 
-        self.rri_diff_mean = hrv(rpeaks=rr_data[self.time_col])['nni_diff_mean']
-        self.rri_diff_min = hrv(rpeaks=rr_data[self.time_col])['nni_diff_min']
-        self.rri_diff_max = hrv(rpeaks=rr_data[self.time_col])['nni_diff_max']
+        self.rri_diff_mean = hrv(rpeaks=self.rr_data[self.time_col])['nni_diff_mean']
+        self.rri_diff_min = hrv(rpeaks=self.rr_data[self.time_col])['nni_diff_min']
+        self.rri_diff_max = hrv(rpeaks=self.rr_data[self.time_col])['nni_diff_max']
 
-        self.rmssd = hrv(rpeaks=rr_data[self.time_col])['rmssd']
-        self.sdsd = hrv(rpeaks=rr_data[self.time_col])['sdsd']
-        self.sdnn = hrv(rpeaks=rr_data[self.time_col])['sdnn']
+        self.rmssd = hrv(rpeaks=self.rr_data[self.time_col])['rmssd']
+        self.sdsd = hrv(rpeaks=self.rr_data[self.time_col])['sdsd']
+        self.sdnn = hrv(rpeaks=self.rr_data[self.time_col])['sdnn']
 
     # Frequency domain features
     def get_frequency_domain_hrv_features(self, detrend: bool = False):
         warnings.warn("Frequency domain features can be confounded by duration of recording.")
 
         self.rel_power_vlf = frequency_domain.welch_psd(
-            rpeaks=rr_data[self.time_col],
+            rpeaks=self.rr_data[self.time_col],
             show=False,
             detrend = detrend,
         )['fft_rel'][0]
         self.rel_power_lf = frequency_domain.welch_psd(
-            rpeaks=rr_data[self.time_col],
+            rpeaks=self.rr_data[self.time_col],
             show=False,
             detrend = detrend,
         )['fft_rel'][1]
         self.rel_power_hf = frequency_domain.welch_psd(
-            rpeaks=rr_data[self.time_col],
+            rpeaks=self.rr_data[self.time_col],
             show=False,
             detrend = detrend,
         )['fft_rel'][1]
 
         self.lf_hf_ratio = frequency_domain.welch_psd(
-            rpeaks=rr_data[self.time_col],
+            rpeaks=self.rr_data[self.time_col],
             show=False,
             detrend = detrend
         )['fft_ratio']
@@ -128,9 +128,9 @@ class HeartFeatures:
     # Non-linear domain features
     def get_nonlinear_domain_hrv_features(self):
 
-        self.sd1 = nonlinear.nonlinear(rpeaks=rr_data[self.time_col])['sd1']
-        self.sd2 = nonlinear.nonlinear(rpeaks=rr_data[self.time_col])['sd2']
-        self.sd_ratio = nonlinear.nonlinear(rpeaks=rr_data[self.time_col])['sd_ratio']
+        self.sd1 = nonlinear.nonlinear(rpeaks=self.rr_data[self.time_col])['sd1']
+        self.sd2 = nonlinear.nonlinear(rpeaks=self.rr_data[self.time_col])['sd2']
+        self.sd_ratio = nonlinear.nonlinear(rpeaks=self.rr_data[self.time_col])['sd_ratio']
 
     def pipeline(self, data: pd.DataFrame = None, **params):
 
@@ -139,7 +139,7 @@ class HeartFeatures:
 
         # Load data if provided
         if data is not None:
-            self.load_data(data=rr_data)
+            self.load_data(rr_data=self.rr_data)
 
         # Calculate requested features
         if self.params['time_domain']:
@@ -159,7 +159,7 @@ class HeartFeatures:
                    'lf_hf_ratio', 'sd1', 'sd2', 'sd_ratio']
         }
 
-        self.features = pd.DataFrame(self.features, index = [0])
+        #self.features = pd.DataFrame(self.features, index = [0])
 
 
 if __name__ == '__main__':
@@ -179,6 +179,6 @@ if __name__ == '__main__':
     rr_data = HeartPreprocessor().pipeline(data=data, **heart_preprocessing_params)
 
     # Feature calculation
-    feature_object =  HeartFeatures()
+    feature_object =  HeartFeatures(rr_data=rr_data)
     feature_object.pipeline(data=rr_data, **heart_features_params)
 

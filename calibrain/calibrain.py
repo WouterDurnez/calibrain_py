@@ -20,6 +20,7 @@ from tqdm import tqdm
 import utils.helper as hlp
 from eye.features import EyeFeatures
 from eye.preprocessing import EyePreprocessor
+from heart.features import HeartFeatures
 from heart.preprocessing import HeartPreprocessor
 from performance.preproc_and_features import build_performance_data_frame
 from utils.helper import log, import_data_frame
@@ -321,7 +322,9 @@ class CalibrainTask:
     def _calculate_features(self):
 
         if self.heart:
-            pass  # TODO
+            log('🚀 Calculating heart features.')
+            self.config['heart'].setdefault('features', {})
+            self._calculate_heart_features()
 
         if self.eye:
             log('🚀 Calculating eye tracking features.')
@@ -359,6 +362,35 @@ class CalibrainTask:
         self.eye_features = self.eye_features[
             self.eye_features.index.notnull()
         ]
+
+    def _calculate_heart_features(self):
+
+        # Set default parameters
+        heart_feat_config = self.config['heart']['features']
+
+        # Create HeartFeatures object, load data and parameters, and run through pipeline
+        self.heart_features = {}
+        hf = HeartFeatures(rr_data=self.rr_data) # TODO: fix overwriting params
+
+        log(f'🚀 Breaking up heart data in sections for processing.')
+
+        for event in self.rr_data.event.unique():
+
+            # Skip NaN (this is simply a lack of label)
+            if str(event) == 'nan':
+                continue
+
+            log(f'🚀 Moving on to <{event}> section.')
+
+            slice = self.rr_data.loc[self.rr_data.event == event]
+            hf.pipeline(data=slice, **heart_feat_config)
+            self.heart_features[event] = hf.features
+
+            # Combine features in feature data frame
+            self.heart_features = pd.DataFrame.from_dict(self.heart_features).T
+            self.heart_features = self.heart_features[
+                self.heart_features.index.notnull()
+            ]
 
     ###################
     # Generic methods #
