@@ -79,7 +79,7 @@ class HeartPreprocessor:
         self.duration = (self.data[self.time_col].iloc[-1] - self.data[self.time_col].iloc[0]) / 1000
         self.sample_rate = len(self.data) / self.duration
 
-    def rr_peak_detection(self, detector: str = "engzee_detector"):
+    def rr_peak_detection(self, detector: str = "engzee"):
         """
         Detects rr-peaks and outputs indexes of peaks
         """
@@ -88,9 +88,9 @@ class HeartPreprocessor:
         detectors = Detectors(self.sample_rate)
 
         detectors = {
-            'hamilton_detector': detectors.hamilton_detector,
-            'christov_detector': detectors.christov_detector,
-            'engzee_detector': detectors.engzee_detector,
+            'hamilton': detectors.hamilton_detector,
+            'christov': detectors.christov_detector,
+            'engzee': detectors.engzee_detector,
         }
 
         # Get timestamps of r-peaks
@@ -140,7 +140,7 @@ class HeartPreprocessor:
                 rr_peak_detection_params = {}
 
             # Set default parameters
-            rr_peak_detection_params.setdefault("detector", "engzee_detector")
+            rr_peak_detection_params.setdefault("detector", "engzee")
 
             # Execute method
             r_peak_timestamps = self.rr_peak_detection(
@@ -164,7 +164,7 @@ if __name__ == '__main__':
     data = import_data_frame(path="../data/klaas_202209130909/clt/ecg.csv")
 
     # Try pipeline
-    heart_prep = HeartPreprocessor(data=data, **heart_preprocessing_params)
+    heart_prep = HeartPreprocessor(data=data)
     rr_data = heart_prep.pipeline(**heart_preprocessing_params)
 
     #test = HeartPreprocessor(data)
