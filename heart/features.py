@@ -45,8 +45,7 @@ class HeartFeatures:
         self.features = None
 
         # Load params
-        if params:
-            self.load_params(**params)
+        self.load_params(**params)
 
         # Load data
         if rr_data is not None:
@@ -84,7 +83,6 @@ class HeartFeatures:
 
     # Time-domain features
     def get_time_domain_hrv_features(self):
-        # TODO: look into UserWarning TINN computation
         """
         Calculates all time-domain hrv features
         """
@@ -140,14 +138,14 @@ class HeartFeatures:
         self.sd2 = nonlinear.nonlinear(rpeaks=self.rr_data[self.time_col])['sd2']
         self.sd_ratio = nonlinear.nonlinear(rpeaks=self.rr_data[self.time_col])['sd_ratio']
 
-    def pipeline(self, data: pd.DataFrame = None, **params):
+    def pipeline(self, rr_data: pd.DataFrame = None, **params):
 
         # Load new parameters if provided
         self.load_params(**params)
 
         # Load data if provided
-        if data is not None:
-            self.load_data(rr_data=self.rr_data)
+        if rr_data is not None:
+            self.load_data(rr_data=rr_data)
 
         # Calculate requested features
         if self.params['time_domain']:
