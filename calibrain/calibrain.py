@@ -214,8 +214,20 @@ class CalibrainTask:
             log('⚠️ There is no eye-tracking or heart data to label!')
             return
 
+        # number the practice events in case practice has been performed more than once
+        if len(self.events_data[self.events_data.event == 'practice']) > 1:
+            counter = 0
+            for i in self.events_data.loc[self.events_data.event == 'practice'].index:
+                counter += 1
+                self.events_data.iloc[
+                    i, self.events_data.columns.get_loc('event')
+                ] = f'practice_{str(counter)}'
+
+
         # Get timestamps to make bins
         bins = self.events_data.timestamp
+
+        # Create list of labels
         labels = [
             np.nan,
             'baseline',
@@ -227,6 +239,13 @@ class CalibrainTask:
             np.nan,
             'hard',
         ]
+
+        # check if there were more than one practice blocks, if so, add labels to list
+        if len(self.events_data[self.events_data.event.str.startswith("practice_")]) > 0:
+            n_practices = len(self.events_data[self.events_data.event.str.startswith("practice_")])
+            labels[labels.index('practice')] = 'practice_1'
+            for i in range(n_practices-1):
+                labels.insert(labels.index('practice_1')+i+1, 'practice_'+str(i+2))
 
         if len(bins) != len(labels) + 1:
             log(
@@ -669,20 +688,18 @@ if __name__ == '__main__':
     #        log(e)
 
     dirs = [
-        Path('../data/Arian_202210051014'),
-        #Path('../data/Stephanie_202210041526'),
+        #Path('../data/Arian_202210051014'),
+        Path('../data/Stephanie_202210041526'),
     ]
-    mrt_perf = {}
-    for dir in dirs:
-        data = CalibrainData(dir=dir, **config)
-        #mrt_perf[data.id] = data.mrt.performance_features
+
+    data = CalibrainData(dir=dirs[0], **config)
 
     # test = pd.concat(mrt_perf).reset_index()
     # test.rename(columns={"level_0": "id"}, inplace=True)
 
     events = data.clt.events_data
-    events2 = events
-    events = events.append(events2).reset_index()
+    #events2 = events
+    #events = events.append(events2).reset_index()
 
     if len(events[events.event == 'practice']) > 1:
         counter = 0
