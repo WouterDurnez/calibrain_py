@@ -45,7 +45,7 @@ class HeartFeatures:
         self.features = None
 
         # Load params
-        self.load_params(**params)
+        #self.load_params(**params)
 
         # Load data
         if rr_data is not None:
@@ -55,9 +55,6 @@ class HeartFeatures:
         self.rr_data = rr_data
 
     def load_params(self, **params):
-
-        if hasattr(self, 'params'):
-            log('⚠️ Overwriting previous parameters!')
 
         params = params if params else {}
 

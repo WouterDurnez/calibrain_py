@@ -333,9 +333,6 @@ class CalibrainTask:
 
     def _calculate_eye_features(self):
 
-        # TODO: Calculate per condition
-        # TODO: Merge all features in feature data frame
-
         # Set default parameters
         eye_feat_config = self.config['eye']['features']
 
@@ -370,7 +367,7 @@ class CalibrainTask:
 
         # Create HeartFeatures object, load data and parameters, and run through pipeline
         self.heart_features = {}
-        hf = HeartFeatures(rr_data=self.rr_data) # TODO: fix overwriting params #
+        hf = HeartFeatures()
 
         log(f'🚀 Breaking up heart data in sections for processing.')
 
@@ -383,7 +380,7 @@ class CalibrainTask:
             log(f'🚀 Moving on to <{event}> section.')
 
             slice = self.rr_data.loc[self.rr_data.event == event]
-            hf.pipeline(data=slice, **heart_feat_config)
+            hf.pipeline(rr_data=slice, **heart_feat_config)
             self.heart_features[event] = hf.features
 
         # Combine features in feature data frame
