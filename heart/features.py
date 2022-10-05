@@ -7,8 +7,7 @@ import pandas as pd
 from joblib import Memory
 import toml
 
-from pyhrv.hrv import hrv
-from pyhrv import frequency_domain, nonlinear
+from pyhrv import frequency_domain, nonlinear, time_domain
 
 from utils.helper import load_config, import_data_frame, log
 from heart.preprocessing import HeartPreprocessor
@@ -89,19 +88,26 @@ class HeartFeatures:
         """
         Calculates all time-domain hrv features
         """
-        self.mean_rri = hrv(rpeaks=self.rr_data[self.time_col])['nni_mean']
 
-        self.rri_diff_mean = hrv(rpeaks=self.rr_data[self.time_col])['nni_diff_mean']
-        self.rri_diff_min = hrv(rpeaks=self.rr_data[self.time_col])['nni_diff_min']
-        self.rri_diff_max = hrv(rpeaks=self.rr_data[self.time_col])['nni_diff_max']
+        log('⚙️ Calculating time domain hrv features.', color='green')
 
-        self.rmssd = hrv(rpeaks=self.rr_data[self.time_col])['rmssd']
-        self.sdsd = hrv(rpeaks=self.rr_data[self.time_col])['sdsd']
-        self.sdnn = hrv(rpeaks=self.rr_data[self.time_col])['sdnn']
+        self.mean_rri = time_domain.nni_parameters(rpeaks=self.rr_data[self.time_col])['nni_mean']
+
+        self.rri_diff_mean = time_domain.nni_differences_parameters(rpeaks=self.rr_data[self.time_col])['nni_diff_mean']
+
+        self.rri_diff_min = time_domain.nni_differences_parameters(rpeaks=self.rr_data[self.time_col])['nni_diff_min']
+        self.rri_diff_max = time_domain.nni_differences_parameters(rpeaks=self.rr_data[self.time_col])['nni_diff_max']
+
+        self.rmssd = time_domain.rmssd(rpeaks=self.rr_data[self.time_col])
+        self.sdsd = time_domain.sdsd(rpeaks=self.rr_data[self.time_col])
+        self.sdnn = time_domain.sdnn(rpeaks=self.rr_data[self.time_col])
 
     # Frequency domain features
     def get_frequency_domain_hrv_features(self, detrend: bool = False):
-        warnings.warn("Frequency domain features can be confounded by duration of recording.")
+
+        log('⚙️ Calculating frequency domain hrv features.', color='green')
+
+        #warnings.warn("Frequency domain features can be confounded by duration of recording.")
 
         self.rel_power_vlf = frequency_domain.welch_psd(
             rpeaks=self.rr_data[self.time_col],
@@ -127,6 +133,8 @@ class HeartFeatures:
 
     # Non-linear domain features
     def get_nonlinear_domain_hrv_features(self):
+
+        log('⚙️ Calculating nonlinear domain hrv features.', color='green')
 
         self.sd1 = nonlinear.nonlinear(rpeaks=self.rr_data[self.time_col])['sd1']
         self.sd2 = nonlinear.nonlinear(rpeaks=self.rr_data[self.time_col])['sd2']
