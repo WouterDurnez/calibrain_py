@@ -93,9 +93,9 @@ class HeartFeatures:
         self.rri_diff_min = time_domain.nni_differences_parameters(rpeaks=self.rr_data[self.time_col])['nni_diff_min']
         self.rri_diff_max = time_domain.nni_differences_parameters(rpeaks=self.rr_data[self.time_col])['nni_diff_max']
 
-        self.rmssd = time_domain.rmssd(rpeaks=self.rr_data[self.time_col])
-        self.sdsd = time_domain.sdsd(rpeaks=self.rr_data[self.time_col])
-        self.sdnn = time_domain.sdnn(rpeaks=self.rr_data[self.time_col])
+        self.rmssd = time_domain.rmssd(rpeaks=self.rr_data[self.time_col])['rmssd']
+        self.sdsd = time_domain.sdsd(rpeaks=self.rr_data[self.time_col])['sdsd']
+        self.sdnn = time_domain.sdnn(rpeaks=self.rr_data[self.time_col])['sdnn']
 
     # Frequency domain features
     def get_frequency_domain_hrv_features(self, detrend: bool = False):
