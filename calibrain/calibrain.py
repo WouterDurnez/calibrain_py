@@ -370,7 +370,7 @@ class CalibrainTask:
 
         # Create HeartFeatures object, load data and parameters, and run through pipeline
         self.heart_features = {}
-        hf = HeartFeatures(rr_data=self.rr_data) # TODO: fix overwriting params
+        hf = HeartFeatures(rr_data=self.rr_data) # TODO: fix overwriting params #
 
         log(f'🚀 Breaking up heart data in sections for processing.')
 
@@ -386,11 +386,11 @@ class CalibrainTask:
             hf.pipeline(data=slice, **heart_feat_config)
             self.heart_features[event] = hf.features
 
-            # Combine features in feature data frame
-            self.heart_features = pd.DataFrame.from_dict(self.heart_features).T
-            self.heart_features = self.heart_features[
-                self.heart_features.index.notnull()
-            ]
+        # Combine features in feature data frame
+        self.heart_features = pd.DataFrame.from_dict(self.heart_features).T
+        self.heart_features = self.heart_features[
+            self.heart_features.index.notnull()
+        ]
 
     ###################
     # Generic methods #
@@ -672,17 +672,26 @@ if __name__ == '__main__':
     #        log(e)
 
     dirs = [
-        Path('../data/klaas_202209130909'),
-        #Path('../data/alex_202209151321'),
-        #Path('../data/charlotte_202209221418'),
-        #Path('../data/john_202209211101'),
-        #Path('../data/jonas_202209191625'),
-        #Path('../data/wouter_202209221309'),
+        Path('../data/Arian_202210051014'),
+        #Path('../data/Stephanie_202210041526'),
     ]
     mrt_perf = {}
     for dir in dirs:
         data = CalibrainData(dir=dir, **config)
-        mrt_perf[data.id] = data.mrt.performance_features
+        #mrt_perf[data.id] = data.mrt.performance_features
 
     # test = pd.concat(mrt_perf).reset_index()
     # test.rename(columns={"level_0": "id"}, inplace=True)
+
+    events = data.clt.events_data
+    events2 = events
+    events = events.append(events2).reset_index()
+
+    if len(events[events.event == 'practice']) > 1:
+        counter = 0
+        for i in events.loc[events.event == 'practice'].index:
+            counter += 1
+            events.iloc[i, events.columns.get_loc('event')] = f'practice_{str(counter)}'
+
+
+
