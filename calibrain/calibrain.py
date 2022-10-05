@@ -203,6 +203,9 @@ class CalibrainTask:
         self.subjective_data['nasa_score'] = self.subjective_data[
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
+        condition_mapping = {1: "easy", 2: "medium", 3: "hard"}
+        self.subjective_data.replace({'condition': condition_mapping}, inplace=True)
+        self.subjective_data.drop(['timestamp', 'time'], axis=1, inplace=True)
 
     ######################
     # PROCESSING METHODS #
