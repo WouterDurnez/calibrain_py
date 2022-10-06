@@ -10,7 +10,7 @@
 ########################
 
 [mrt]
-heart = true                        # Heart data params (if true, use default)
+#heart = true                        # Heart data params (if true, use default)
 events = true                       # Event data params (if true, use default)
 performance = true                  # Performance data params (if true, use default)
 subjective = true                   # Subjective data params (if true, use default)
@@ -58,13 +58,35 @@ subjective = true                   # Subjective data params (if true, use defau
         [mrt.eye.features.aoi_mapping]
         Display_Screen = "AOI1"
 
+# Heart data (ecg)
+[mrt.heart]
+
+    # Preprocessing steps
+    [mrt.heart.preprocessing]
+    time_col = "timestamp"
+    ecg_col = "ecg"
+
+        [mrt.heart.preprocessing.rr_peak_detection_params]
+        detector = "engzee"
+
+    # Feature calculation steps
+    [mrt.heart.features]
+    time_col = "timestamp"
+    rr_col = "rr_int"
+
+    time_domain = true
+    frequency_domain = true
+    nonlinear_domain = true
+
+    detrend = false
+
 
 ################################
 # COGNITIVE LOAD TASK (n-back) #
 ################################
 
 [clt]
-heart = true                        # Heart data params (if true, use default)
+#heart = true                        # Heart data params (if true, use default)
 events = true                       # Event data params (if true, use default)
 performance = true                  # Performance data params (if true, use default)
 subjective = true                   # Subjective data params (if true, use default)
@@ -112,5 +134,25 @@ subjective = true                   # Subjective data params (if true, use defau
         [clt.eye.features.aoi_mapping]
         Display_Screen = "AOI1"
 
+# Heart data (ecg)
+[clt.heart]
 
+    # Preprocessing steps
+    [clt.heart.preprocessing]
+    time_col = "timestamp"
+    ecg_col = "ecg"
+
+        [clt.heart.preprocessing.rr_peak_detection_params]
+        detector = "engzee"
+
+    # Feature calculation steps
+    [clt.heart.features]
+    time_col = "timestamp"
+    rr_col = "rr_int"
+
+    time_domain = true
+    frequency_domain = true
+    nonlinear_domain = true
+
+    detrend = false
 

@@ -27,7 +27,7 @@ class EyeFeatures:
         self.relative_gaze_switches = None
 
         # Load params
-        self.load_params(**params)
+        #self.load_params(**params)
 
         # Load data
         if data is not None:

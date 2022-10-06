@@ -20,6 +20,8 @@ from tqdm import tqdm
 import utils.helper as hlp
 from eye.features import EyeFeatures
 from eye.preprocessing import EyePreprocessor
+from heart.features import HeartFeatures
+from heart.preprocessing import HeartPreprocessor
 from performance.preproc_and_features import build_performance_data_frame
 from utils.helper import log, import_data_frame
 
@@ -123,7 +125,7 @@ class CalibrainTask:
     def _import_data(self):
 
         if self.heart:
-            log('📋 Importing RR data.')
+            log('📋 Importing ECG data.')
             self._import_heart()
 
         if self.events:
@@ -201,6 +203,9 @@ class CalibrainTask:
         self.subjective_data['nasa_score'] = self.subjective_data[
             ['pd', 'md', 'td', 'pe', 'ef', 'fl']
         ].mean(axis=1)
+        condition_mapping = {1: "easy", 2: "medium", 3: "hard"}
+        self.subjective_data.replace({'condition': condition_mapping}, inplace=True)
+        self.subjective_data.drop(['timestamp', 'time'], axis=1, inplace=True)
 
     ######################
     # PROCESSING METHODS #
@@ -212,8 +217,20 @@ class CalibrainTask:
             log('⚠️ There is no eye-tracking or heart data to label!')
             return
 
+        # number the practice events in case practice has been performed more than once
+        if len(self.events_data[self.events_data.event == 'practice']) > 1:
+            counter = 0
+            for i in self.events_data.loc[self.events_data.event == 'practice'].index:
+                counter += 1
+                self.events_data.iloc[
+                    i, self.events_data.columns.get_loc('event')
+                ] = f'practice_{str(counter)}'
+
+
         # Get timestamps to make bins
         bins = self.events_data.timestamp
+
+        # Create list of labels
         labels = [
             np.nan,
             'baseline',
@@ -225,6 +242,13 @@ class CalibrainTask:
             np.nan,
             'hard',
         ]
+
+        # check if there were more than one practice blocks, if so, add labels to list
+        if len(self.events_data[self.events_data.event.str.startswith("practice_")]) > 0:
+            n_practices = len(self.events_data[self.events_data.event.str.startswith("practice_")])
+            labels[labels.index('practice')] = 'practice_1'
+            for i in range(n_practices-1):
+                labels.insert(labels.index('practice_'+str(i+1)) + 1, 'practice_'+str(i+2))
 
         if len(bins) != len(labels) + 1:
             log(
@@ -248,7 +272,7 @@ class CalibrainTask:
 
         if self.heart:
 
-            log('🏷️ Labeling RR data.')
+            log('🏷️ Labeling ECG data.')
 
             # Add labels
             self.heart_data['event'] = pd.cut(
@@ -265,7 +289,10 @@ class CalibrainTask:
     def _preprocess_data(self):
 
         if self.heart:
-            pass  # TODO
+            log('🚀 Preprocessing ECG data.')
+
+            self.config['heart'].setdefault('preprocessing', {})
+            self._preprocess_heart()
 
         if self.eye:
 
@@ -294,6 +321,22 @@ class CalibrainTask:
             data=self.eye_data, **self.config['eye']['preprocessing']
         )
 
+    def _preprocess_heart(self):
+
+        # Set default parameters
+        heart_prep_config = self.config['heart']['preprocessing']
+
+        # Set defaults for all steps (in case they aren't set in config)
+        for step in (
+                'rr_peak_detection_params',
+        ):
+            heart_prep_config.setdefault(step, True)
+
+        hp = HeartPreprocessor()
+        self.rr_data = hp.pipeline(
+            data=self.heart_data, **self.config['heart']['preprocessing']
+        )
+
     ###############################
     # FEATURE CALCULATION METHODS #
     ###############################
@@ -301,7 +344,9 @@ class CalibrainTask:
     def _calculate_features(self):
 
         if self.heart:
-            pass  # TODO
+            log('🚀 Calculating heart features.')
+            self.config['heart'].setdefault('features', {})
+            self._calculate_heart_features()
 
         if self.eye:
             log('🚀 Calculating eye tracking features.')
@@ -309,9 +354,6 @@ class CalibrainTask:
             self._calculate_eye_features()
 
     def _calculate_eye_features(self):
-
-        # TODO: Calculate per condition
-        # TODO: Merge all features in feature data frame
 
         # Set default parameters
         eye_feat_config = self.config['eye']['features']
@@ -338,6 +380,35 @@ class CalibrainTask:
         self.eye_features = pd.DataFrame.from_dict(self.eye_features).T
         self.eye_features = self.eye_features[
             self.eye_features.index.notnull()
+        ]
+
+    def _calculate_heart_features(self):
+
+        # Set default parameters
+        heart_feat_config = self.config['heart']['features']
+
+        # Create HeartFeatures object, load data and parameters, and run through pipeline
+        self.heart_features = {}
+        hf = HeartFeatures()
+
+        log(f'🚀 Breaking up heart data in sections for processing.')
+
+        for event in self.rr_data.event.unique():
+
+            # Skip NaN (this is simply a lack of label)
+            if str(event) == 'nan':
+                continue
+
+            log(f'🚀 Moving on to <{event}> section.')
+
+            slice = self.rr_data.loc[self.rr_data.event == event]
+            hf.pipeline(rr_data=slice, **heart_feat_config)
+            self.heart_features[event] = hf.features
+
+        # Combine features in feature data frame
+        self.heart_features = pd.DataFrame.from_dict(self.heart_features).T
+        self.heart_features = self.heart_features[
+            self.heart_features.index.notnull()
         ]
 
     ###################
@@ -608,7 +679,7 @@ if __name__ == '__main__':
     # Only do CLT
     # onfig['mrt'] = False
 
-    dir = Path('../data/klaas_202209130909')
+    #dir = Path('../data/klaas_202209130909')
     # data_folders = [f for f in dir.iterdir() if f.is_dir()]
     # data = []
 
@@ -619,4 +690,25 @@ if __name__ == '__main__':
     #        log(f'Failed for <{df}>...', color='red',verbosity=1)
     #        log(e)
 
-    data = CalibrainData(dir=dir, **config)
+    dirs = [
+        #Path('../data/Arian_202210051014'),
+        Path('../data/Stephanie_202210041526'),
+    ]
+
+    data = CalibrainData(dir=dirs[0], **config)
+
+    # test = pd.concat(mrt_perf).reset_index()
+    # test.rename(columns={"level_0": "id"}, inplace=True)
+
+    events = data.clt.events_data
+    #events2 = events
+    #events = events.append(events2).reset_index()
+
+    if len(events[events.event == 'practice']) > 1:
+        counter = 0
+        for i in events.loc[events.event == 'practice'].index:
+            counter += 1
+            events.iloc[i, events.columns.get_loc('event')] = f'practice_{str(counter)}'
+
+
+

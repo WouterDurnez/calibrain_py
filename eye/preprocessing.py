@@ -137,6 +137,10 @@ class EyePreprocessor:
         # Median absolute deviation
         median = self.data[on_col].median()
         mad = self.data[on_col].mad()  # (np.abs(self.data[on_col] - median)).median()
+                                       # FutureWarning:
+                                       # The 'mad' method is deprecated and will be removed
+                                       # in a future version. To compute the same result, you
+                                       # may do `(df - df.mean()).abs().mean()`.
 
         # Visualize if requested
         if show_plot:
