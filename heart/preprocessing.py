@@ -64,6 +64,12 @@ class HeartPreprocessor:
         # If no step arguments are given: run everything with default parameters
         params.setdefault("rr_peak_detection_params", True)
         self.params = params
+        '''
+        assert (
+                detector in detectors
+        ), f'⚠️ Expected one of the following r-peak detectors: hamilton_detector, ' \
+           f'christov_detector, engzee_detector. Got {detector}'
+        '''
 
     def check_sample_frequency(self):
         """
@@ -84,9 +90,9 @@ class HeartPreprocessor:
         detectors = Detectors(self.sample_rate)
 
         detectors = {
-            "hamilton": detectors.hamilton_detector,
-            "christov": detectors.christov_detector,
-            "engzee": detectors.engzee_detector,
+            'hamilton': detectors.hamilton_detector,
+            'christov': detectors.christov_detector,
+            'engzee': detectors.engzee_detector,
         }
 
         assert detector in detectors, (
@@ -145,7 +151,7 @@ class HeartPreprocessor:
                 rr_peak_detection_params = {}
 
             # Set default parameters
-            rr_peak_detection_params.setdefault("detector", "engzee_detector")
+            rr_peak_detection_params.setdefault("detector", "engzee")
 
             # Execute method
             r_peak_timestamps = self.rr_peak_detection(
@@ -169,7 +175,7 @@ if __name__ == "__main__":
     data = import_data_frame(path="../data/klaas_202209130909/clt/ecg.csv")
 
     # Try pipeline
-    heart_prep = HeartPreprocessor(data=data, **heart_preprocessing_params)
+    heart_prep = HeartPreprocessor(data=data)
     rr_data = heart_prep.pipeline(**heart_preprocessing_params)
 
     # test = HeartPreprocessor(data)

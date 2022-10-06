@@ -66,12 +66,18 @@ subjective = true                   # Subjective data params (if true, use defau
     ecg_col = "ecg"
 
         [mrt.heart.preprocessing.rr_peak_detection_params]
-        detector = "engzee_detector"
+        detector = "engzee"
 
     # Feature calculation steps
     [mrt.heart.features]
     time_col = "timestamp"
     rr_col = "rr_int"
+
+    time_domain = true
+    frequency_domain = true
+    nonlinear_domain = true
+
+    detrend = false
 
 
 ################################
@@ -141,4 +147,10 @@ subjective = true                   # Subjective data params (if true, use defau
     [clt.heart.features]
     time_col = "timestamp"
     rr_col = "rr_int"
+
+    time_domain = true
+    frequency_domain = true
+    nonlinear_domain = true
+
+    detrend = false
 
