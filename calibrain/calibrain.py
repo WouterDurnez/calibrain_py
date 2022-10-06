@@ -608,7 +608,7 @@ if __name__ == '__main__':
     # Only do CLT
     # onfig['mrt'] = False
 
-    dir = Path('../data/klaas_202209130909')
+    dir = Path('../data/dennis_202210031645')
     # data_folders = [f for f in dir.iterdir() if f.is_dir()]
     # data = []
 

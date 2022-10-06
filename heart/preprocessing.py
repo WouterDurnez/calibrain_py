@@ -9,7 +9,8 @@ from utils.helper import log, import_data_frame
 
 from ecgdetectors import Detectors
 
-#TODO: do we need denoising? filtering? baseline fitting?
+# TODO: do we need denoising? filtering? baseline fitting?
+
 
 class HeartPreprocessor:
     def __init__(self, data: pd.DataFrame = None, **params):
@@ -51,18 +52,14 @@ class HeartPreprocessor:
         """
 
         # Check if parameters have been set yet, they will be overwritten
-        if hasattr(self, 'params'):
-            log('⚠️ Overwriting previous parameters!')
+        if hasattr(self, "params"):
+            log("⚠️ Overwriting previous parameters!")
 
         params = params if params else {}
 
         # Set basic attributes
-        self.ecg_col = (
-            params["ecg_col"] if "ecg_col" in params else "ecg"
-        )
-        self.time_col = (
-            params["time_col"] if "time_col" in params else "timestamp"
-        )
+        self.ecg_col = params["ecg_col"] if "ecg_col" in params else "ecg"
+        self.time_col = params["time_col"] if "time_col" in params else "timestamp"
 
         # If no step arguments are given: run everything with default parameters
         params.setdefault("rr_peak_detection_params", True)
@@ -73,7 +70,9 @@ class HeartPreprocessor:
         Calculates sampling frequency
         """
 
-        self.duration = (self.data[self.time_col].iloc[-1] - self.data[self.time_col].iloc[0]) / 1000
+        self.duration = (
+            self.data[self.time_col].iloc[-1] - self.data[self.time_col].iloc[0]
+        ) / 1000
         self.sample_rate = len(self.data) / self.duration
 
     def rr_peak_detection(self, detector: str = "engzee"):
@@ -85,27 +84,30 @@ class HeartPreprocessor:
         detectors = Detectors(self.sample_rate)
 
         detectors = {
-            'hamilton': detectors.hamilton_detector,
-            'christov': detectors.christov_detector,
-            'engzee': detectors.engzee_detector,
+            "hamilton": detectors.hamilton_detector,
+            "christov": detectors.christov_detector,
+            "engzee": detectors.engzee_detector,
         }
 
-        assert (
-                detector in detectors
-        ), f'⚠️ Expected one of the following r-peak detectors: hamilton, ' \
-           f'christov, engzee. Got {detector}.'
+        assert detector in detectors, (
+            f"⚠️ Expected one of the following r-peak detectors: hamilton, "
+            f"christov, engzee. Got {detector}."
+        )
 
         # Get timestamps of r-peaks
         r_peak_indexes = detectors[detector](self.data[self.ecg_col])
-        r_peak_timestamps = pd.DataFrame(self.data[self.time_col].iloc[r_peak_indexes],
-                                         columns=[self.time_col])
+        r_peak_timestamps = pd.DataFrame(
+            self.data[self.time_col].iloc[r_peak_indexes], columns=[self.time_col]
+        )
 
         # Create new df with timestamps of r-peaks and a new column with rr-intervals
-        r_peak_timestamps['rr_int'] = r_peak_timestamps.diff()
+        r_peak_timestamps["rr_int"] = r_peak_timestamps.diff()
 
         # add event column if heart_data has already been labeled
-        if 'event' in self.data.columns:
-            r_peak_timestamps['event'] = self.data['event'].iloc[r_peak_timestamps.index]
+        if "event" in self.data.columns:
+            r_peak_timestamps["event"] = self.data["event"].iloc[
+                r_peak_timestamps.index
+            ]
 
         return r_peak_timestamps
 
@@ -119,7 +121,7 @@ class HeartPreprocessor:
             self.load_data(data=data)
 
         assert (
-                hasattr(self, "data") and self.data is not None
+            hasattr(self, "data") and self.data is not None
         ), "Need to load data first! Either load data with the `load` method, or pass a `data` argument to the pipeline function."
 
         # Line up arguments
@@ -154,7 +156,7 @@ class HeartPreprocessor:
         return r_peak_timestamps
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     print("Test area!")
 
@@ -170,5 +172,4 @@ if __name__ == '__main__':
     heart_prep = HeartPreprocessor(data=data, **heart_preprocessing_params)
     rr_data = heart_prep.pipeline(**heart_preprocessing_params)
 
-    #test = HeartPreprocessor(data)
-
+    # test = HeartPreprocessor(data)

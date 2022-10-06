@@ -61,8 +61,8 @@ class EyePreprocessor:
         """
 
         # Check if parameters have been set yet, they will be overwritten
-        if hasattr(self, 'params') and self.data is not None:
-            log('⚠️ Overwriting previous parameters!')
+        if hasattr(self, "params") and self.data is not None:
+            log("⚠️ Overwriting previous parameters!")
 
         params = params if params else {}
 
@@ -148,10 +148,10 @@ class EyePreprocessor:
         # Median absolute deviation
         median = self.data[on_col].median()
         mad = (np.abs(self.data[on_col] - median)).median()
-                                       # FutureWarning:
-                                       # The 'mad' method is deprecated and will be removed
-                                       # in a future version. To compute the same result, you
-                                       # may do `(df - df.mean()).abs().mean()`.
+        # FutureWarning:
+        # The 'mad' method is deprecated and will be removed
+        # in a future version. To compute the same result, you
+        # may do `(df - df.mean()).abs().mean()`.
 
         # Visualize if requested
         if show_plot:
@@ -291,9 +291,10 @@ class EyePreprocessor:
         if data is not None:
             self.load_data(data=data)
 
-        assert (
-            hasattr(self, "data") and self.data is not None
-        ), "Need to load data first! Either load data with the `load` method, or pass a `data` argument to the pipeline function."
+        assert hasattr(self, "data") and self.data is not None, (
+            "Need to load data first! Either load data with the `load` method, or pass a `data` argument to the "
+            "pipeline function. "
+        )
 
         # Line up arguments
         clean_missing_data_params = self.params["clean_missing_data_params"]

@@ -15,9 +15,9 @@ from dash import Dash, html
 
 from utils.helper import hi
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Opening message
-    hi('CaliBrain -- Visual Inspector')
+    hi("CaliBrain -- Visual Inspector")
 
     # path_to_data = '../data/test_202206021426'
     # data = calibrain.CalibrainData(dir=path_to_data)
@@ -31,23 +31,23 @@ if __name__ == '__main__':
         __name__,
         meta_tags=[
             {
-                'name': 'viewport',
-                'content': 'width=device-width, initial-scale=1',
+                "name": "viewport",
+                "content": "width=device-width, initial-scale=1",
             }
         ],
         external_stylesheets=[dbc.themes.YETI],
     )
 
-    app.title = 'CaliBrain - visual inspector'
+    app.title = "CaliBrain - visual inspector"
 
     app.layout = html.Div(
-        id='app-container',
+        id="app-container",
         children=[],
         style={
-            'height': '100vh',
-            'width': '100vw',
-            'position': 'relative',
-            'display': 'block',
+            "height": "100vh",
+            "width": "100vw",
+            "position": "relative",
+            "display": "block",
         },
     )
 
