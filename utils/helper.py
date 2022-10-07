@@ -34,13 +34,13 @@ def hi(title=None, **params):
     If there's anything to initialize, do so here.
     """
 
-    print("\n")
-    print(Fore.BLUE, end="")
-    print(pyfiglet.figlet_format("Calibrain", font="small")[:-2])
+    print('\n')
+    print(Fore.BLUE, end='')
+    print(pyfiglet.figlet_format('Calibrain', font='small')[:-2])
     print(Style.RESET_ALL)
 
     if title:
-        log(title, title=True, color="blue")
+        log(title, title=True, color='blue')
 
     # Set params on_col request
     if params:
@@ -48,7 +48,9 @@ def hi(title=None, **params):
 
 
 # Fancy print
-def log(*message, verbosity=3, sep="", timestamped=None, title=False, color=None):
+def log(
+    *message, verbosity=3, sep='', timestamped=None, title=False, color=None
+):
     """
     Print wrapper that adds timestamp, and can be used to toggle levels of logging info.
 
@@ -63,16 +65,16 @@ def log(*message, verbosity=3, sep="", timestamped=None, title=False, color=None
 
     # Set colors
     color_dict = {
-        "red": Fore.RED,
-        "blue": Fore.BLUE,
-        "green": Fore.GREEN,
-        "yellow": Fore.YELLOW,
-        "magenta": Fore.MAGENTA,
-        "cyan": Fore.CYAN,
+        'red': Fore.RED,
+        'blue': Fore.BLUE,
+        'green': Fore.GREEN,
+        'yellow': Fore.YELLOW,
+        'magenta': Fore.MAGENTA,
+        'cyan': Fore.CYAN,
     }
     assert (
         color in color_dict or color is None
-    ), "Please pick a valid color for logging (red, green, blue, yellow, magenta or cyan)."
+    ), 'Please pick a valid color for logging (red, green, blue, yellow, magenta or cyan).'
     if color and color in color_dict:
         color = color_dict[color]
 
@@ -86,19 +88,19 @@ def log(*message, verbosity=3, sep="", timestamped=None, title=False, color=None
         if title:
             n = len(*message)
             if color:
-                print(color, end="")
-            print("\n" + (n + 4) * "#")
-            print("# ", *message, " #", sep="")
-            print((n + 4) * "#" + "\n" + Style.RESET_ALL)
+                print(color, end='')
+            print('\n' + (n + 4) * '#')
+            print('# ', *message, ' #', sep='')
+            print((n + 4) * '#' + '\n' + Style.RESET_ALL)
 
         # Print regular
         else:
             ts = timestamped if timestamped is not None else TIMESTAMPED
-            t = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            t = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
             if color:
-                print(color, end="")
+                print(color, end='')
             print(
-                (str(t) + (" - " if sep == "" else "-")) if ts else "",
+                (str(t) + (' - ' if sep == '' else '-')) if ts else '',
                 *message,
                 Style.RESET_ALL,
                 sep=sep,
@@ -119,7 +121,7 @@ def time_it(f: Callable):
         res = f(*args, **kwargs)
         t2 = time.time()
 
-        log(f"{f.__name__} took {round(t2 - t1, 3)} seconds to complete.")
+        log(f'{f.__name__} took {round(t2 - t1, 3)} seconds to complete.')
 
         return res
 
@@ -138,13 +140,13 @@ def set_dir(*dirs):
         if not os.path.exists(dir):
             os.makedirs(dir, exist_ok=True)
             log(
-                "WARNING: Data directory <{dir}> did not exist yet, and was created.".format(
+                'WARNING: Data directory <{dir}> did not exist yet, and was created.'.format(
                     dir=dir
                 ),
                 verbosity=1,
             )
         else:
-            log(f"<{dir}> folder accounted for.", verbosity=3)
+            log(f'<{dir}> folder accounted for.', verbosity=3)
 
 
 def clean_col_name(col: str):
@@ -154,12 +156,12 @@ def clean_col_name(col: str):
     :return: new string without whitespaces, parentheses, etc.
     """
     col = col.lower()
-    col = col.replace(" ", "_")
-    col = col.replace(":", "")
-    col = col.replace("(", "")
-    col = col.replace(")", "")
-    col = col[1:] if col.startswith("_") else col
-    col = col[-1] if col.endswith("_") else col
+    col = col.replace(' ', '_')
+    col = col.replace(':', '')
+    col = col.replace('(', '')
+    col = col.replace(')', '')
+    col = col[1:] if col.startswith('_') else col
+    col = col[-1] if col.endswith('_') else col
 
     return col
 
@@ -167,8 +169,8 @@ def clean_col_name(col: str):
 def import_data_frame(path: str | Path, **kwargs):
     df = pd.read_csv(filepath_or_buffer=path, **kwargs)
     df.columns = [clean_col_name(col) for col in df.columns]
-    if "timestamp" in df.columns:
-        df["time"] = pd.to_datetime(df.timestamp, unit="ms", origin="unix")
+    if 'timestamp' in df.columns:
+        df['time'] = pd.to_datetime(df.timestamp, unit='ms', origin='unix')
 
     return df
 
@@ -181,5 +183,5 @@ def load_config(path: str | Path):
     return config
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     hi()

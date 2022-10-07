@@ -141,12 +141,15 @@ def build_performance_data_frame(
     matrix.drop(columns=['accuracy'], inplace=True, errors='ignore')
 
     # Rename condition levels
-    matrix.condition.replace(to_replace={
-        0: 'practice',
-        1: 'easy',
-        2: 'medium',
-        3: 'hard',
-    }, inplace=True)
+    matrix.condition.replace(
+        to_replace={
+            0: 'practice',
+            1: 'easy',
+            2: 'medium',
+            3: 'hard',
+        },
+        inplace=True,
+    )
     matrix.set_index('condition', inplace=True)
     matrix.columns.name = None
 
