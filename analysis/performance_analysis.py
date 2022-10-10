@@ -23,12 +23,10 @@ if __name__ == '__main__':
 
     # import data (manual for now)
     dirs = [
-        Path('../data/klaas_202209130909'),
-        Path('../data/alex_202209151321'),
-        Path('../data/charlotte_202209221418'),
-        Path('../data/john_202209211101'),
-        Path('../data/jonas_202209191625'),
-        Path('../data/wouter_202209221309'),
+        Path('../data/Dennis_202210030001'),
+        Path('../data/Carl_202210030000'),
+        Path('../data/Stephanie_202210041526'),
+        Path('../data/Arian_202210051014'),
     ]
 
     # MRT
@@ -51,7 +49,7 @@ if __name__ == '__main__':
     )
     plt.show()
 
-    sns.boxplot(
+    sns.barplot(
         data=data_mrt,
         x='condition',
         y='correct_proportion',

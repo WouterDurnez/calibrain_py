@@ -49,10 +49,10 @@ subjective = true                   # Subjective data params (if true, use defau
     entropy = true
     absolute_gaze_switches = true
     relative_gaze_switches = true
-    absolute_gaze_switches_to = ["Display_Screen","MRT_Supply_Vent"]
+    absolute_gaze_switches_to = ["MRT_Screen","MRT_Shape"]
     relative_gaze_switches_to = [
-        "Display_Screen",
-        "MRT_Supply_Vent"
+        "MRT_Screen",
+        "MRT_Shape"
     ]
 
         [mrt.eye.features.aoi_mapping]
@@ -122,14 +122,11 @@ subjective = true                   # Subjective data params (if true, use defau
     gaze_object_col = "gaze_object"
     groupby_col = "event"
 
-    entropy = true
-    absolute_gaze_switches = true
-    relative_gaze_switches = true
+    entropy = false
+    absolute_gaze_switches = false
+    relative_gaze_switches = false
     absolute_gaze_switches_to = false
-    relative_gaze_switches_to = [
-        "Display_Screen",
-        "MRT_Supply_Vent"
-    ]
+    relative_gaze_switches_to = false
 
         [clt.eye.features.aoi_mapping]
         Display_Screen = "AOI1"
