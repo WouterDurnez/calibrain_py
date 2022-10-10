@@ -89,7 +89,7 @@ class CalibrainTask:
 
         # Which data types will we tackle?
         for type in task_config.keys():
-            if not type == False:
+            if type is not False:
                 setattr(self, type, True)
 
         # Store config
@@ -120,7 +120,7 @@ class CalibrainTask:
 
         # Done!
         log(
-            f'\U0001f3c1 Done with generic data components in {self.task_name}, moving on to custom data...',
+            f'🏁 Done with generic data components in {self.task_name}, moving on to custom data...',
             verbosity=1,
         )
 
@@ -234,9 +234,9 @@ class CalibrainTask:
             'easy',
             np.nan,
             'medium',
-            np.nan,
-            'hard',
         ]
+        if self.task_name == 'clt':
+            labels += [np.nan, 'hard']
 
         # Check for multiple practice blocks
         n_practice_blocks = len(
@@ -336,9 +336,9 @@ class CalibrainTask:
             eye_prep_config.setdefault(step, True)
 
         # Create EyePreprocessor object, load data and parameters, and run through pipeline
-        ep = EyePreprocessor()
+        ep = EyePreprocessor(**self.config['eye']['preprocessing'])
         self.eye_data = ep.pipeline(
-            data=self.eye_data, **self.config['eye']['preprocessing']
+            data=self.eye_data,
         )
 
     def _preprocess_heart(self):
@@ -350,9 +350,9 @@ class CalibrainTask:
         for step in ('rr_peak_detection_params',):
             heart_prep_config.setdefault(step, True)
 
-        hp = HeartPreprocessor()
+        hp = HeartPreprocessor(**self.config['heart']['preprocessing'])
         self.rr_data = hp.pipeline(
-            data=self.heart_data, **self.config['heart']['preprocessing']
+            data=self.heart_data
         )
 
     ###############################
@@ -378,7 +378,7 @@ class CalibrainTask:
 
         # Create EyeFeatures object, load data and parameters, and run through pipeline
         self.eye_features = {}
-        ef = EyeFeatures()
+        ef = EyeFeatures(**eye_feat_config)
 
         log(f'🚀 Breaking up eye data in sections for processing.')
 
@@ -391,7 +391,7 @@ class CalibrainTask:
             log(f'🚀 Moving on to <{event}> section.')
 
             slice = self.eye_data.loc[self.eye_data.event == event]
-            ef.pipeline(data=slice, **eye_feat_config)
+            ef.pipeline(data=slice)
             self.eye_features[event] = ef.features
 
         # Combine features in feature data frame
@@ -407,7 +407,7 @@ class CalibrainTask:
 
         # Create HeartFeatures object, load data and parameters, and run through pipeline
         self.heart_features = {}
-        hf = HeartFeatures()
+        hf = HeartFeatures(**heart_feat_config)
 
         log(f'🚀 Breaking up heart data in sections for processing.')
 
@@ -420,7 +420,7 @@ class CalibrainTask:
             log(f'🚀 Moving on to <{event}> section.')
 
             slice = self.rr_data.loc[self.rr_data.event == event]
-            hf.pipeline(data=slice, **heart_feat_config)
+            hf.pipeline(data=slice)
             self.heart_features[event] = hf.features
 
         # Combine features in feature data frame
@@ -468,6 +468,9 @@ class CalibrainCLT(CalibrainTask):
     """
 
     def __init__(self, dir: str | Path, **task_config):
+
+        self.task = 'clt' \
+                    ''
         # Initialize and import requested data
         super().__init__(dir=dir, **task_config)
         self._import_performance()
@@ -495,6 +498,9 @@ class CalibrainMRT(CalibrainTask):
     """
 
     def __init__(self, dir: str | Path, **task_config):
+
+        self.task = 'mrt'
+
         # Initialize and import requested data
         super().__init__(dir=dir, **task_config)
         self._import_performance()
@@ -695,7 +701,7 @@ if __name__ == '__main__':
         config = toml.load(config_file)
 
     # Only do CLT
-    # onfig['mrt'] = False
+    config['clt'] = False
 
     dirs = [
         # Path('../data/Arian_202210051014'),
@@ -710,4 +716,3 @@ if __name__ == '__main__':
     #        log(e)
 
     data = CalibrainData(dir=dirs[0], **config)
-

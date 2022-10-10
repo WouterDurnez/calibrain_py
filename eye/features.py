@@ -31,7 +31,7 @@ class EyeFeatures(Processor):
         super().__init__()
 
         # Load params and data if given
-        if params is not None:
+        if params is not None and params != {}:
             self.load_params(**params)
         if data is not None:
             self.load_data(data=data)
@@ -275,7 +275,7 @@ class EyeFeatures(Processor):
     def pipeline(self, data: pd.DataFrame = None, **params):
 
         # Load new parameters if provided
-        if params is not None:
+        if params is not None and params != {}:
             self.load_params(**params)
 
         # Load data if provided

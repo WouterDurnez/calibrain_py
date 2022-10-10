@@ -21,8 +21,6 @@ mem = Memory(location='../cache/heart', verbose=0)
 class HeartFeatures(Processor):
     def __init__(self, data: pd.DataFrame = None, **params):
 
-
-
         # Initialize attributes
         self.time_col = None
         self.ecg_col = None
@@ -49,7 +47,7 @@ class HeartFeatures(Processor):
         super().__init__()
 
         # Load params and data if given
-        if params is not None:
+        if params is not None and params != {}:
             self.load_params(**params)
         if data is not None:
             self.load_data(data=data)
@@ -160,11 +158,9 @@ class HeartFeatures(Processor):
 
     def pipeline(self, data: pd.DataFrame = None, **params):
 
-        # Load new parameters if provided
-        if params is not None:
+        # Load new parameters and data if provided
+        if params is not None and params != {}:
             self.load_params(**params)
-
-        # Load data if provided
         if data is not None:
             self.load_data(data=data)
 
