@@ -6,39 +6,41 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-from utils.helper import load_config, import_data_frame, log
 from eye.preprocessing import EyePreprocessor
+from utils.base import Processor
+from utils.helper import load_config, import_data_frame, log
 from joblib import Memory
 from sklearn.preprocessing import normalize
 
 mem = Memory(location='../cache/eye', verbose=0)
 
 
-class EyeFeatures:
+class EyeFeatures(Processor):
     def __init__(self, data: pd.DataFrame = None, **params):
 
-        self.data = None
+        # Initialize attributes
         self.gaze_object_col = None
         self.aoi_mapping = None
 
+        # Initialize features
         self.transition_matrix = None
         self.entropy = None
         self.absolute_gaze_switches = None
         self.relative_gaze_switches = None
 
-        # Load params
-        #self.load_params(**params)
+        super().__init__()
 
-        # Load data
+        # Load params and data if given
+        if params is not None and params != {}:
+            self.load_params(**params)
         if data is not None:
             self.load_data(data=data)
 
-    def load_data(self, data):
-        self.data = data
-
     def load_params(self, **params):
-
-        params = params if params else {}
+        """
+        Load feature calculation parameter set
+        """
+        super().load_params(**params)
 
         # Set basic attributes
         self.gaze_object_col = (
@@ -51,12 +53,17 @@ class EyeFeatures:
         )
 
         # If no step arguments are given: run everything with default parameters
-        params.setdefault('entropy', True)
-        params.setdefault('absolute_gaze_switches', True)
-        params.setdefault('relative_gaze_switches', True)
-        params.setdefault('absolute_gaze_switches_to', False)
-        params.setdefault('relative_gaze_switches_to', False)
-        self.params = params
+        self.params.setdefault('entropy', True)
+        self.params.setdefault('absolute_gaze_switches', True)
+        self.params.setdefault('relative_gaze_switches', True)
+        self.params.setdefault('absolute_gaze_switches_to', False)
+        self.params.setdefault('relative_gaze_switches_to', False)
+
+    def load_data(self, data:pd.DataFrame):
+        """
+        Load eye-tracking data for feature calculation
+        """
+        super().load_data(data=data)
 
     def map_aois(self):
 
@@ -72,12 +79,7 @@ class EyeFeatures:
 
         data = self.data.copy()
         data['AOI'] = data[self.gaze_object_col]
-        data.AOI.replace(
-            to_replace=self.aoi_mapping, inplace=True
-        )
-        #self.data.loc[:,self.gaze_object_col].replace(
-        #    to_replace=self.aoi_mapping
-        #)
+        data.AOI.replace(to_replace=self.aoi_mapping, inplace=True)
 
         self.data = data
 
@@ -209,7 +211,7 @@ class EyeFeatures:
         assert mode in (
             'absolute',
             'relative',
-        ), '⚠️ When calculating gaze switches, only mode must be "absolute" or "relative"'
+        ), '⚠️ When calculating gaze switches, only mode must be "absolute" or "relative".'
 
         # If there is a list of objects, we'll recursively pass them on (and get out)
         if isinstance(to, list):
@@ -261,6 +263,7 @@ class EyeFeatures:
 
             # If we wanted relative, then calculate proportion
             # (we need absolute switches in either case)
+            # TODO: store this in a dict (self.features[feature_name])?
             if mode == 'relative':
                 setattr(
                     self,
@@ -272,7 +275,8 @@ class EyeFeatures:
     def pipeline(self, data: pd.DataFrame = None, **params):
 
         # Load new parameters if provided
-        self.load_params(**params)
+        if params is not None and params != {}:
+            self.load_params(**params)
 
         # Load data if provided
         if data is not None:
@@ -300,7 +304,9 @@ class EyeFeatures:
             feature: value
             for feature, value in self.__dict__.items()
             if feature
-            in ['entropy', ]
+            in [
+                'entropy',
+            ]
             or feature.__contains__('gaze_switches')
         }
 
@@ -335,7 +341,7 @@ if __name__ == '__main__':
     config = load_config(path='../configs/test.toml')
 
     # Load and select data
-    data = import_data_frame(path='../data/7_202205091017/CLT/eye.csv')
+    data = import_data_frame(path='../data/klaas_202209130909/MRT/eye.csv')
     data = data.filter(
         items=[
             'timestamp',
@@ -377,4 +383,4 @@ if __name__ == '__main__':
     # Feature calculation
     feature_object = EyeFeatures(data=prepped_data)
     feature_object.pipeline(**config['mrt']['eye']['features'])
-    # feature_object.visualize_transition_matrix(normalized=False)
+    feature_object.visualize_transition_matrix(normalized=True)

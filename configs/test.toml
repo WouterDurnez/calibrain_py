@@ -10,7 +10,6 @@
 ########################
 
 [mrt]
-#heart = true                        # Heart data params (if true, use default)
 events = true                       # Event data params (if true, use default)
 performance = true                  # Performance data params (if true, use default)
 subjective = true                   # Subjective data params (if true, use default)
@@ -49,10 +48,10 @@ subjective = true                   # Subjective data params (if true, use defau
     entropy = true
     absolute_gaze_switches = true
     relative_gaze_switches = true
-    absolute_gaze_switches_to = ["MRT_Screen","MRT_Shape"]
+    absolute_gaze_switches_to = ["Display_Screen","MRT_Supply_Vent"]
     relative_gaze_switches_to = [
-        "MRT_Screen",
-        "MRT_Shape"
+        "Display_Screen",
+        "MRT_Supply_Vent"
     ]
 
         [mrt.eye.features.aoi_mapping]
@@ -86,7 +85,6 @@ subjective = true                   # Subjective data params (if true, use defau
 ################################
 
 [clt]
-#heart = true                        # Heart data params (if true, use default)
 events = true                       # Event data params (if true, use default)
 performance = true                  # Performance data params (if true, use default)
 subjective = true                   # Subjective data params (if true, use default)
@@ -122,14 +120,17 @@ subjective = true                   # Subjective data params (if true, use defau
     gaze_object_col = "gaze_object"
     groupby_col = "event"
 
-    entropy = false
-    absolute_gaze_switches = false
-    relative_gaze_switches = false
+    entropy = true
+    absolute_gaze_switches = true
+    relative_gaze_switches = true
     absolute_gaze_switches_to = false
-    relative_gaze_switches_to = false
+    relative_gaze_switches_to = [
+        "MRT_Screen",
+        "MRT_Shape"
+    ]
 
         [clt.eye.features.aoi_mapping]
-        Display_Screen = "AOI1"
+        MRT_screen = "AOI1"
 
 # Heart data (ecg)
 [clt.heart]
