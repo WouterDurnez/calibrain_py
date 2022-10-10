@@ -38,7 +38,7 @@ if __name__ == '__main__':
         mrt_perf[data.id] = data.mrt.performance_features
 
     data_mrt = pd.concat(mrt_perf).reset_index()
-    data_mrt.rename(columns={"level_0": "id"}, inplace=True)
+    data_mrt.rename(columns={'level_0': 'id'}, inplace=True)
 
     # delete practice data
     data_mrt = data_mrt.loc[data_mrt.condition != 'practice']
@@ -51,12 +51,7 @@ if __name__ == '__main__':
     )
     plt.show()
 
-    sns.boxplot(
-        data=data_mrt,
-        x='condition',
-        y='correct_proportion',
-        hue='id'
-    )
+    sns.boxplot(data=data_mrt, x='condition', y='correct_proportion', hue='id')
     plt.show()
 
     # CLT
@@ -66,7 +61,7 @@ if __name__ == '__main__':
         mrt_perf[data.id] = data.clt.performance_features
 
     data_clt = pd.concat(mrt_perf).reset_index()
-    data_clt.rename(columns={"level_0": "id"}, inplace=True)
+    data_clt.rename(columns={'level_0': 'id'}, inplace=True)
 
     # delete practice data
     data_clt = data_clt.loc[data_clt.condition != 'practice']
@@ -75,6 +70,6 @@ if __name__ == '__main__':
         data=data_clt,
         x='condition',
         y='correct_proportion',
-        #hue='id'
+        # hue='id'
     )
     plt.show()
